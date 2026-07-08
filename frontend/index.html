@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker - Kanban Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #1a202c;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #6b7280;
+        }
+
+        /* Kanban board */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .column-header {
+            padding: 16px;
+            border-bottom: 2px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .column-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1a202c;
+        }
+
+        .column-count {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .column-content {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .column-content.drag-over {
+            background: #f0f9ff;
+            border-radius: 4px;
+        }
+
+        /* Task Card */
+        .task-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ccc;
+        }
+
+        .task-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .task-card.priority-high {
+            border-left-color: #ef4444;
+        }
+
+        .task-card.priority-medium {
+            border-left-color: #f59e0b;
+        }
+
+        .task-card.priority-low {
+            border-left-color: #10b981;
+        }
+
+        .task-title {
+            font-weight: 500;
+            color: #1a202c;
+            font-size: 14px;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .task-description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .task-priority {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
+        .task-priority.high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .task-priority.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .task-priority.low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .task-assignee {
+            color: #6b7280;
+        }
+
+        .task-btn {
+            width: 100%;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            background: #e5e7eb;
+            color: #374151;
+            transition: background 0.2s;
+        }
+
+        .task-btn:hover {
+            background: #d1d5db;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .task-btn-edit {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .task-btn-edit:hover {
+            background: #bfdbfe;
+        }
+
+        .task-btn-delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .task-btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .task-actions .task-btn {
+            flex: 1;
+            width: auto;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .create-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .create-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            width: min(560px, 100%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .form-actions button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .form-actions .secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .form-actions .primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .form-field-error {
+            font-size: 12px;
+            color: #dc2626;
+            margin-top: 2px;
+            display: none;
+        }
+
+        .form-field-error.visible {
+            display: block;
+        }
+
+        .form-banner-error {
+            padding: 10px 12px;
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .form-banner-error.visible {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-actions">
+            <div class="header">
+                <h1>📋 Task Tracker</h1>
+                <p>A simple Kanban board to manage your tasks</p>
+            </div>
+            <button class="create-btn" id="createTaskBtn">+ New Task</button>
+        </div>
+
+        <div id="stateIndicator"></div>
+
+        <div class="board" id="board">
+            <!-- Column: To Do -->
+            <div class="column" data-status="ToDo">
+                <div class="column-header">
+                    <div class="column-title">To Do</div>
+                    <div class="column-count"><span class="count">0</span> tasks</div>
+                </div>
+                <div class="column-content"></div>
+            </div>
+
+            <!-- Column: In Progress -->
+            <div class="column" data-status="InProgress">
+                <div class="column-header">
+                    <div class="column-title">In Progress</div>
+                    <div class="column-count"><span class="count">0</span> tasks</div>
+                </div>
+                <div class="column-content"></div>
+            </div>
+
+            <!-- Column: Done -->
+            <div class="column" data-status="Done">
+                <div class="column-header">
+                    <div class="column-title">Done</div>
+                    <div class="column-count"><span class="count">0</span> tasks</div>
+                </div>
+                <div class="column-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="taskModalBackdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Create Task</h2>
+                <button class="modal-close" id="modalClose" type="button" aria-label="Close">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm" novalidate>
+                    <div id="formBannerError" class="form-banner-error" role="alert"></div>
+                    <input type="hidden" id="taskId" name="taskId" />
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="taskTitle">Title</label>
+                            <input id="taskTitle" name="title" maxlength="200" autocomplete="off" />
+                            <span id="titleFieldError" class="form-field-error" role="alert">Title is required</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDescription">Description</label>
+                            <textarea id="taskDescription" name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskStatus">Status</label>
+                            <select id="taskStatus" name="status">
+                                <option value="ToDo">To Do</option>
+                                <option value="InProgress">In Progress</option>
+                                <option value="Done">Done</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskPriority">Priority</label>
+                            <select id="taskPriority" name="priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskAssignee">Assignee</label>
+                            <input id="taskAssignee" name="assignee" />
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="secondary" id="cancelModalBtn" type="button">Cancel</button>
+                        <button class="primary" type="submit">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let tasks = [];
+        let isLoading = false;
+        let error = null;
+        let draggedTaskId = null;
+        let dragSourceStatus = null;
+        let editingTaskId = null;
+
+        // API configuration
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        // ============ Utility Functions ============
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // ============ State Management ============
+
+        function updateStateIndicator() {
+            const indicator = document.getElementById('stateIndicator');
+            indicator.innerHTML = '';
+
+            if (isLoading) {
+                indicator.innerHTML = '<div style="padding: 16px; background: #dbeafe; color: #1e40af; border-radius: 6px; margin-bottom: 20px; text-align: center;">⏳ Loading tasks...</div>';
+            } else if (error) {
+                indicator.innerHTML = `
+                    <div style="padding: 16px; background: #fee2e2; color: #7f1d1d; border-radius: 6px; margin-bottom: 20px;">
+                        <div>❌ ${escapeHtml(error)}</div>
+                        <button id="retryBtn" style="margin-top: 10px; padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+                    </div>
+                `;
+                document.getElementById('retryBtn').addEventListener('click', retryFetch);
+            }
+        }
+
+        function clearModalErrors() {
+            document.getElementById('formBannerError').textContent = '';
+            document.getElementById('formBannerError').classList.remove('visible');
+            document.getElementById('titleFieldError').classList.remove('visible');
+        }
+
+        function openTaskModal(task = null) {
+            const modalBackdrop = document.getElementById('taskModalBackdrop');
+            const modalTitle = document.getElementById('modalTitle');
+            const form = document.getElementById('taskForm');
+            const titleInput = document.getElementById('taskTitle');
+            const descriptionInput = document.getElementById('taskDescription');
+            const statusInput = document.getElementById('taskStatus');
+            const priorityInput = document.getElementById('taskPriority');
+            const assigneeInput = document.getElementById('taskAssignee');
+            const taskIdInput = document.getElementById('taskId');
+
+            clearModalErrors();
+            editingTaskId = task?.id ?? null;
+            modalTitle.textContent = task ? 'Edit Task' : 'Create Task';
+
+            if (task) {
+                taskIdInput.value = task.id;
+                titleInput.value = task.title || '';
+                descriptionInput.value = task.description || '';
+                statusInput.value = task.status || 'ToDo';
+                priorityInput.value = task.priority || 'Medium';
+                assigneeInput.value = task.assignee || '';
+            } else {
+                form.reset();
+                taskIdInput.value = '';
+                statusInput.value = 'ToDo';
+                priorityInput.value = 'Medium';
+            }
+
+            modalBackdrop.classList.add('open');
+            titleInput.focus();
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModalBackdrop').classList.remove('open');
+            document.getElementById('taskForm').reset();
+            clearModalErrors();
+            editingTaskId = null;
+        }
+
+        // ============ API Functions ============
+
+        async function fetchTasks() {
+            isLoading = true;
+            error = null;
+            updateStateIndicator();
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                tasks = await response.json();
+                renderBoard(tasks);
+            } catch (err) {
+                error = `Failed to load tasks: ${err.message}`;
+                updateStateIndicator();
+            } finally {
+                isLoading = false;
+                if (!error) {
+                    updateStateIndicator();
+                }
+            }
+        }
+
+        function retryFetch() {
+            fetchTasks();
+        }
+
+        async function moveTaskToStatus(taskId, newStatus) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const oldStatus = task.status;
+
+            if (oldStatus === newStatus) {
+                renderBoard(tasks);
+                return;
+            }
+
+            task.status = newStatus;
+            renderBoard(tasks);
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMsg = errorData.detail || `HTTP ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+            } catch (err) {
+                task.status = oldStatus;
+                renderBoard(tasks);
+                error = `Failed to update task: ${err.message}`;
+                updateStateIndicator();
+            }
+        }
+
+        async function saveTask(event) {
+            event.preventDefault();
+            clearModalErrors();
+
+            const form = event.currentTarget;
+            const formData = new FormData(form);
+
+            const title = formData.get('title').toString().trim();
+            const description = formData.get('description').toString().trim();
+            const status = formData.get('status').toString();
+            const priority = formData.get('priority').toString();
+            const assignee = formData.get('assignee').toString().trim() || null;
+
+            // Client validation
+            if (!title) {
+                document.getElementById('titleFieldError').classList.add('visible');
+                document.getElementById('taskTitle').focus();
+                return;
+            }
+
+            // Build payload. For edits, omit status when it has not changed to
+            // avoid triggering the server's no-op transition validator.
+            let payload;
+            if (editingTaskId) {
+                const existing = tasks.find(t => t.id === editingTaskId);
+                payload = { title, description, priority, assignee };
+                if (status !== existing?.status) {
+                    payload.status = status;
+                }
+            } else {
+                payload = { title, description, status, priority, assignee };
+            }
+
+            try {
+                const response = editingTaskId
+                    ? await fetch(`${API_BASE}/tasks/${editingTaskId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    })
+                    : await fetch(`${API_BASE}/tasks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const msg = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    // Show error inside the modal; keep modal open
+                    const banner = document.getElementById('formBannerError');
+                    banner.textContent = msg;
+                    banner.classList.add('visible');
+                    return;
+                }
+
+                closeTaskModal();
+                await fetchTasks();
+            } catch (err) {
+                // Network-level failure — surface in modal banner
+                const banner = document.getElementById('formBannerError');
+                banner.textContent = `Request failed: ${err.message}`;
+                banner.classList.add('visible');
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!window.confirm('Delete this task?')) {
+                return;
+            }
+
+            isLoading = true;
+            error = null;
+            updateStateIndicator();
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMsg = errorData.detail || `HTTP ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+
+                await fetchTasks();
+            } catch (err) {
+                error = `Failed to delete task: ${err.message}`;
+                updateStateIndicator();
+            } finally {
+                isLoading = false;
+                if (!error) {
+                    updateStateIndicator();
+                }
+            }
+        }
+
+        // ============ Rendering Functions ============
+
+        function renderBoard(tasks) {
+            const columns = document.querySelectorAll('.column');
+
+            columns.forEach(column => {
+                const status = column.dataset.status;
+                const header = column.querySelector('.column-header');
+                const content = column.querySelector('.column-content');
+
+                const statusTasks = tasks.filter(task => task.status === status);
+
+                statusTasks.sort((a, b) => {
+                    const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+                    const aPriority = priorityOrder[a.priority] ?? 3;
+                    const bPriority = priorityOrder[b.priority] ?? 3;
+
+                    if (aPriority !== bPriority) {
+                        return aPriority - bPriority;
+                    }
+                    return a.id.localeCompare(b.id);
+                });
+
+                const countElement = header.querySelector('.column-count');
+                if (countElement) {
+                    countElement.innerHTML = `<span class="count">${statusTasks.length}</span> tasks`;
+                }
+
+                content.innerHTML = '';
+
+                if (statusTasks.length === 0) {
+                    content.innerHTML = '<div style="padding: 20px; text-align: center; color: #9ca3af;">No tasks yet</div>';
+                } else {
+                    statusTasks.forEach(task => {
+                        const card = createTaskCard(task);
+                        content.appendChild(card);
+                    });
+                }
+
+                attachDropHandlers(content, status);
+            });
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = `task-card priority-${task.priority.toLowerCase()}`;
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+
+            const title = escapeHtml(task.title);
+            const description = task.description ? escapeHtml(task.description) : '';
+            const assignee = task.assignee ? escapeHtml(task.assignee) : 'Unassigned';
+
+            let html = `
+                <div class="task-title">${title}</div>
+            `;
+
+            if (description) {
+                html += `<div class="task-description">${description}</div>`;
+            }
+
+            html += `
+                <div class="task-meta">
+                    <span class="task-priority ${task.priority.toLowerCase()}">${task.priority}</span>
+                    <span class="task-assignee">${assignee}</span>
+                </div>
+                <div class="task-actions">
+                    <button class="task-btn task-btn-edit" data-action="edit">Edit</button>
+                    <button class="task-btn task-btn-delete" data-action="delete">Delete</button>
+                </div>
+            `;
+
+            card.innerHTML = html;
+
+            card.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTaskModal(task);
+            });
+
+            card.querySelector('[data-action="delete"]').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await deleteTask(task.id);
+            });
+
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            return card;
+        }
+
+        // ============ Drag and Drop Handlers ============
+
+        function handleDragStart(e) {
+            draggedTaskId = this.dataset.taskId;
+            const task = tasks.find(t => t.id === draggedTaskId);
+            dragSourceStatus = task?.status;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            if (this.classList.contains('dragging')) {
+                this.classList.remove('dragging');
+            }
+            draggedTaskId = null;
+            dragSourceStatus = null;
+
+            document.querySelectorAll('.column-content').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+        }
+
+        function attachDropHandlers(contentElement, status) {
+            contentElement.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                contentElement.classList.add('drag-over');
+            });
+
+            contentElement.addEventListener('dragleave', (e) => {
+                if (e.target === contentElement) {
+                    contentElement.classList.remove('drag-over');
+                }
+            });
+
+            contentElement.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                contentElement.classList.remove('drag-over');
+
+                if (draggedTaskId) {
+                    await moveTaskToStatus(draggedTaskId, status);
+                }
+
+                draggedTaskId = null;
+                dragSourceStatus = null;
+            });
+        }
+
+        // ============ Initialize ============
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('createTaskBtn').addEventListener('click', () => openTaskModal());
+            document.getElementById('modalClose').addEventListener('click', closeTaskModal);
+            document.getElementById('cancelModalBtn').addEventListener('click', closeTaskModal);
+            document.getElementById('taskModalBackdrop').addEventListener('click', (event) => {
+                if (event.target.id === 'taskModalBackdrop') {
+                    closeTaskModal();
+                }
+            });
+            document.getElementById('taskForm').addEventListener('submit', saveTask);
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeTaskModal();
+                }
+            });
+            fetchTasks();
+        });
+    </script>
+</body>
+</html>

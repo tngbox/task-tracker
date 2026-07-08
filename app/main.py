@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app import storage
@@ -26,6 +27,15 @@ app = FastAPI(
     title="Task Tracker API",
     description="A minimal FastAPI backend for tracking tasks (learning project, ADR-001).",
     version="0.1.0",
+)
+
+# Enable CORS for frontend development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -144,3 +154,5 @@ def delete_task(task_id: str) -> None:
             status_code=404,
             detail=f"Task with id {task_id} not found",
         )
+
+
