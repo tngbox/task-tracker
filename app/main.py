@@ -48,12 +48,20 @@ class HealthResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse, status_code=200)
 def health_check() -> HealthResponse:
-    """
-    Simple liveness check.
+    """Report service liveness.
 
-    Returns a fixed "ok" status plus the current UTC timestamp in ISO 8601
-    format, so callers can confirm both that the server is up and roughly
-    when the response was generated.
+    Returns a fixed ``"ok"`` status plus the current UTC timestamp in ISO 8601
+    format, so callers can confirm both that the server is up and roughly when
+    the response was generated.
+
+    Returns:
+        HealthResponse: An object with ``status="ok"`` and an ISO 8601
+            ``timestamp`` in UTC.
+
+    Example:
+        ``GET /health`` returns HTTP 200 with::
+
+            {"status": "ok", "timestamp": "2026-07-17T12:00:00+00:00"}
     """
     return HealthResponse(
         status="ok",
@@ -68,12 +76,27 @@ def health_check() -> HealthResponse:
     tags=["tasks"],
 )
 def create_task(payload: TaskCreate) -> TaskResponse:
-    """
-    Create a new task.
+    """Create a new task.
 
-    Validation (title rules, enum values, unknown fields) is enforced by
-    Pydantic on TaskCreate, so invalid input returns HTTP 422 automatically.
-    Id and timestamps are assigned by the storage layer.
+    Field-shape validation (title rules, enum values, unknown fields) is
+    enforced by Pydantic on ``TaskCreate`` before this handler runs, so invalid
+    input returns HTTP 422 automatically. The id and ``created_at``/
+    ``updated_at`` timestamps are assigned by the storage layer.
+
+    Args:
+        payload: The task to create. ``title`` is required; ``status`` defaults
+            to ``ToDo`` and ``priority`` to ``Medium`` when omitted.
+
+    Returns:
+        TaskResponse: The stored task, including its generated id and timestamps.
+
+    Raises:
+        HTTPException: 422 (raised by FastAPI/Pydantic) if the payload has a
+            blank or too-long title, an invalid enum value, or unknown fields.
+
+    Example:
+        ``POST /tasks`` with ``{"title": "Write docs"}`` returns HTTP 201 and
+        the created task with ``status="ToDo"`` and ``priority="Medium"``.
     """
     return storage.add_task(payload)
 
@@ -83,21 +106,43 @@ def list_tasks(
     status: TaskStatus | None = None,
     priority: TaskPriority | None = None,
 ) -> list[TaskResponse]:
-    """
-    List tasks, optionally filtered by status and/or priority.
+    """List tasks, optionally filtered by status and/or priority.
 
-    Invalid query values are rejected by FastAPI with HTTP 422. An empty
-    result (including a filter that matches nothing) returns 200 with [].
+    When both filters are supplied, a task must match both to be included.
+    Invalid query values are rejected by FastAPI with HTTP 422.
+
+    Args:
+        status: Optional status to filter by. ``None`` applies no status filter.
+        priority: Optional priority to filter by. ``None`` applies no priority
+            filter.
+
+    Returns:
+        list[TaskResponse]: Matching tasks. An empty list (HTTP 200 with ``[]``)
+            is returned when nothing matches or no tasks exist.
+
+    Example:
+        ``GET /tasks?status=InProgress&priority=High`` returns HTTP 200 with a
+        JSON array of the matching tasks.
     """
     return storage.get_all_tasks(status=status, priority=priority)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def get_task(task_id: str) -> TaskResponse:
-    """
-    Retrieve a single task by its id.
+    """Retrieve a single task by its id.
 
-    Returns the task if it exists, otherwise raises HTTP 404.
+    Args:
+        task_id: The id of the task to fetch.
+
+    Returns:
+        TaskResponse: The task with the given id.
+
+    Raises:
+        HTTPException: 404 if no task with ``task_id`` exists.
+
+    Example:
+        ``GET /tasks/3f...`` returns HTTP 200 with the task, or HTTP 404 with
+        ``{"detail": "Task with id 3f... not found"}``.
     """
     task = storage.get_task_by_id(task_id)
     if task is None:
@@ -110,14 +155,27 @@ def get_task(task_id: str) -> TaskResponse:
 
 @app.patch("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def update_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
-    """
-    Partially update a task by its id.
+    """Partially update a task by its id.
 
-    Only fields provided in the body are changed; invalid body values are
-    rejected by Pydantic with HTTP 422. When a new status is supplied it must
-    be a valid transition from the task's current status (HTTP 422 otherwise).
-    Returns the updated task, or raises HTTP 404 if no task with the given id
-    exists.
+    Only fields present in the body are changed; body values are validated by
+    Pydantic (HTTP 422 on bad shape). When a new ``status`` is supplied, the
+    task must exist and the move must be an allowed transition from its current
+    status (see ``validate_status_transition``); same-to-same is not allowed.
+
+    Args:
+        task_id: The id of the task to update.
+        payload: The fields to change. Omitted fields are left untouched.
+
+    Returns:
+        TaskResponse: The updated task.
+
+    Raises:
+        HTTPException: 404 if no task with ``task_id`` exists; 422 if the body
+            shape is invalid or the requested status transition is not allowed.
+
+    Example:
+        ``PATCH /tasks/3f...`` with ``{"status": "InProgress"}`` returns HTTP
+        200 and the updated task when the transition ToDo->InProgress is valid.
     """
     if payload.status is not None:
         existing = storage.get_task_by_id(task_id)
@@ -143,11 +201,20 @@ def update_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
     tags=["tasks"],
 )
 def delete_task(task_id: str) -> None:
-    """
-    Delete a task by its id.
+    """Delete a task by its id.
 
-    Returns an empty 204 response on success, or raises HTTP 404 if no task
-    with the given id exists.
+    Args:
+        task_id: The id of the task to delete.
+
+    Returns:
+        None: On success the endpoint responds with HTTP 204 (no body).
+
+    Raises:
+        HTTPException: 404 if no task with ``task_id`` exists.
+
+    Example:
+        ``DELETE /tasks/3f...`` returns HTTP 204 on success, or HTTP 404 if the
+        id is unknown.
     """
     if not storage.delete_task(task_id):
         raise HTTPException(

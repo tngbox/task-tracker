@@ -28,7 +28,18 @@ def _now() -> datetime:
 
 
 def add_task(payload: TaskCreate) -> TaskResponse:
-    """Create and store a new task, returning the stored representation."""
+    """Create and store a new task.
+
+    Generates a UUID id and sets ``created_at``/``updated_at`` to the current
+    UTC time. ``description`` becomes an empty string when the payload's value
+    is ``None``.
+
+    Args:
+        payload: The validated task-creation data.
+
+    Returns:
+        TaskResponse: The stored task, including its generated id and timestamps.
+    """
     now = _now()
     task = TaskResponse(
         id=str(uuid.uuid4()),
@@ -48,7 +59,17 @@ def get_all_tasks(
     status: Optional[TaskStatus] = None,
     priority: Optional[TaskPriority] = None,
 ) -> list[TaskResponse]:
-    """Return all tasks, optionally filtered by status and/or priority."""
+    """Return all stored tasks, optionally filtered.
+
+    Args:
+        status: Optional status to filter by; ``None`` applies no status filter.
+        priority: Optional priority to filter by; ``None`` applies no priority
+            filter.
+
+    Returns:
+        list[TaskResponse]: Tasks matching every supplied filter (all tasks when
+            no filter is given); empty list if none match.
+    """
     tasks = list(_tasks.values())
     if status is not None:
         tasks = [t for t in tasks if t.status == status]
@@ -58,16 +79,34 @@ def get_all_tasks(
 
 
 def get_task_by_id(task_id: str) -> Optional[TaskResponse]:
-    """Return the task with the given id, or None if it does not exist."""
+    """Look up a task by id.
+
+    Args:
+        task_id: The id to look up.
+
+    Returns:
+        Optional[TaskResponse]: The matching task, or ``None`` if no task with
+            that id exists.
+    """
     return _tasks.get(task_id)
 
 
 def update_task(task_id: str, payload: TaskUpdate) -> Optional[TaskResponse]:
-    """
-    Apply a partial update to an existing task.
+    """Apply a partial update to an existing task.
 
-    Only fields explicitly provided in the payload are changed. Returns the
-    updated task, or None if no task with that id exists.
+    Only fields explicitly set in the payload (``exclude_unset``) are changed.
+    When there are changes, ``updated_at`` is refreshed to the current UTC time;
+    a payload with no set fields leaves the task (and its ``updated_at``)
+    unchanged. This function does not check status transitions; that rule is
+    enforced by the route handler.
+
+    Args:
+        task_id: The id of the task to update.
+        payload: The fields to change; unset fields are ignored.
+
+    Returns:
+        Optional[TaskResponse]: The updated task, or ``None`` if no task with
+            that id exists.
     """
     existing = _tasks.get(task_id)
     if existing is None:
@@ -84,7 +123,15 @@ def update_task(task_id: str, payload: TaskUpdate) -> Optional[TaskResponse]:
 
 
 def delete_task(task_id: str) -> bool:
-    """Delete a task by id. Returns True if a task was removed, else False."""
+    """Delete a task by id.
+
+    Args:
+        task_id: The id of the task to delete.
+
+    Returns:
+        bool: ``True`` if a task was removed, ``False`` if no task with that id
+            existed.
+    """
     return _tasks.pop(task_id, None) is not None
 
 
