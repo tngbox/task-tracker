@@ -139,6 +139,41 @@ def test_patch_same_status_returns_422(client, created_task):
     assert response.status_code == 422
 
 
+# Regression: an explicit null for a field that is non-nullable in TaskResponse
+# must be rejected with 422, not copied onto the stored task. Previously these
+# returned 200 with a null value that violated the response schema.
+def test_patch_null_title_returns_422(client, created_task):
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"title": None})
+    assert response.status_code == 422
+
+
+def test_patch_null_description_returns_422(client, created_task):
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"description": None})
+    assert response.status_code == 422
+
+
+def test_patch_null_status_returns_422(client, created_task):
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"status": None})
+    assert response.status_code == 422
+
+
+def test_patch_null_priority_returns_422(client, created_task):
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"priority": None})
+    assert response.status_code == 422
+
+
+def test_patch_null_assignee_allowed_returns_200(client, created_task):
+    # assignee is nullable in TaskResponse, so clearing it with null is valid.
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"assignee": None})
+    assert response.status_code == 200
+    assert response.json()["assignee"] is None
+
+
 # --------------------------------------------------------------------------
 # DELETE /tasks/{id}
 # --------------------------------------------------------------------------

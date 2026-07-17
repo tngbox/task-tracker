@@ -11,7 +11,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 
 class TaskStatus(str, Enum):
@@ -71,11 +71,25 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
 
+    @field_validator("title", "description", "status", "priority")
+    @classmethod
+    def _reject_explicit_null(cls, value: object, info: ValidationInfo) -> object:
+        """Reject an explicit ``null`` for fields that are non-nullable in the
+        response.
+
+        Omitting a field leaves it unchanged (the default ``None`` is never
+        validated), but sending ``null`` would otherwise be copied straight onto
+        the stored task and violate ``TaskResponse``'s non-optional types. These
+        fields cannot be cleared, so an explicit ``null`` is a client error (422).
+        ``assignee`` is intentionally excluded because it is nullable.
+        """
+        if value is None:
+            raise ValueError(f"{info.field_name} must not be null")
+        return value
+
     @field_validator("title")
     @classmethod
-    def _check_title(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return value
+    def _check_title(cls, value: str) -> str:
         return _validate_title(value)
 
 
