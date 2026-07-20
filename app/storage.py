@@ -27,6 +27,14 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _is_overdue(task: TaskResponse) -> bool:
+    """A task is overdue when due_date is in the past and status is not Done."""
+    if task.due_date is None or task.status == TaskStatus.DONE:
+        return False
+    today_utc = _now().date()
+    return task.due_date < today_utc
+
+
 def add_task(payload: TaskCreate) -> TaskResponse:
     """Create and store a new task, returning the stored representation."""
     now = _now()
@@ -37,6 +45,7 @@ def add_task(payload: TaskCreate) -> TaskResponse:
         status=payload.status,
         priority=payload.priority,
         assignee=payload.assignee,
+        due_date=payload.due_date,
         created_at=now,
         updated_at=now,
     )
@@ -47,13 +56,16 @@ def add_task(payload: TaskCreate) -> TaskResponse:
 def get_all_tasks(
     status: Optional[TaskStatus] = None,
     priority: Optional[TaskPriority] = None,
+    overdue: Optional[bool] = None,
 ) -> list[TaskResponse]:
-    """Return all tasks, optionally filtered by status and/or priority."""
+    """Return all tasks, optionally filtered by status, priority, and overdue."""
     tasks = list(_tasks.values())
     if status is not None:
         tasks = [t for t in tasks if t.status == status]
     if priority is not None:
         tasks = [t for t in tasks if t.priority == priority]
+    if overdue is not None:
+        tasks = [t for t in tasks if _is_overdue(t) is overdue]
     return tasks
 
 

@@ -162,6 +162,28 @@
             color: #6b7280;
         }
 
+        .task-due-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .task-due-date {
+            color: #4b5563;
+        }
+
+        .task-overdue-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
         .task-btn {
             width: 100%;
             padding: 6px 12px;
@@ -212,6 +234,26 @@
             align-items: center;
             gap: 16px;
             margin-bottom: 24px;
+        }
+
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-toolbar label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .header-toolbar select {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+            background: white;
         }
 
         .create-btn {
@@ -363,6 +405,16 @@
             .board {
                 grid-template-columns: 1fr;
             }
+
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-toolbar {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -373,7 +425,15 @@
                 <h1>📋 Task Tracker</h1>
                 <p>A simple Kanban board to manage your tasks</p>
             </div>
-            <button class="create-btn" id="createTaskBtn">+ New Task</button>
+            <div class="header-toolbar">
+                <label for="overdueFilter">Filter</label>
+                <select id="overdueFilter" aria-label="Filter tasks by overdue state">
+                    <option value="all">All tasks</option>
+                    <option value="overdue">Overdue only</option>
+                    <option value="not_overdue">Not overdue</option>
+                </select>
+                <button class="create-btn" id="createTaskBtn">+ New Task</button>
+            </div>
         </div>
 
         <div id="stateIndicator"></div>
@@ -448,6 +508,10 @@
                             <label for="taskAssignee">Assignee</label>
                             <input id="taskAssignee" name="assignee" />
                         </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">Due Date</label>
+                            <input id="taskDueDate" name="due_date" type="date" />
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button class="secondary" id="cancelModalBtn" type="button">Cancel</button>
@@ -466,6 +530,7 @@
         let draggedTaskId = null;
         let dragSourceStatus = null;
         let editingTaskId = null;
+        let overdueFilter = 'all';
 
         // API configuration
         const API_BASE = 'http://127.0.0.1:8000';
@@ -481,6 +546,16 @@
                 "'": '&#039;'
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function isTaskOverdue(task) {
+            if (!task.due_date || task.status === 'Done') {
+                return false;
+            }
+            const now = new Date();
+            const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            const dueDateUtc = new Date(`${task.due_date}T00:00:00Z`);
+            return dueDateUtc < todayUtc;
         }
 
         // ============ State Management ============
@@ -517,6 +592,7 @@
             const statusInput = document.getElementById('taskStatus');
             const priorityInput = document.getElementById('taskPriority');
             const assigneeInput = document.getElementById('taskAssignee');
+            const dueDateInput = document.getElementById('taskDueDate');
             const taskIdInput = document.getElementById('taskId');
 
             clearModalErrors();
@@ -530,11 +606,13 @@
                 statusInput.value = task.status || 'ToDo';
                 priorityInput.value = task.priority || 'Medium';
                 assigneeInput.value = task.assignee || '';
+                dueDateInput.value = task.due_date || '';
             } else {
                 form.reset();
                 taskIdInput.value = '';
                 statusInput.value = 'ToDo';
                 priorityInput.value = 'Medium';
+                dueDateInput.value = '';
             }
 
             modalBackdrop.classList.add('open');
@@ -556,7 +634,16 @@
             updateStateIndicator();
 
             try {
-                const response = await fetch(`${API_BASE}/tasks`);
+                const params = new URLSearchParams();
+                if (overdueFilter === 'overdue') {
+                    params.set('overdue', 'true');
+                } else if (overdueFilter === 'not_overdue') {
+                    params.set('overdue', 'false');
+                }
+                const queryString = params.toString();
+                const url = queryString ? `${API_BASE}/tasks?${queryString}` : `${API_BASE}/tasks`;
+
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -623,6 +710,7 @@
             const status = formData.get('status').toString();
             const priority = formData.get('priority').toString();
             const assignee = formData.get('assignee').toString().trim() || null;
+            const dueDate = formData.get('due_date').toString().trim() || null;
 
             // Client validation
             if (!title) {
@@ -640,8 +728,11 @@
                 if (status !== existing?.status) {
                     payload.status = status;
                 }
+                if (dueDate !== (existing?.due_date ?? null)) {
+                    payload.due_date = dueDate;
+                }
             } else {
-                payload = { title, description, status, priority, assignee };
+                payload = { title, description, status, priority, assignee, due_date: dueDate };
             }
 
             try {
@@ -760,6 +851,8 @@
             const title = escapeHtml(task.title);
             const description = task.description ? escapeHtml(task.description) : '';
             const assignee = task.assignee ? escapeHtml(task.assignee) : 'Unassigned';
+            const dueDate = task.due_date ? escapeHtml(task.due_date) : null;
+            const overdue = isTaskOverdue(task);
 
             let html = `
                 <div class="task-title">${title}</div>
@@ -774,6 +867,18 @@
                     <span class="task-priority ${task.priority.toLowerCase()}">${task.priority}</span>
                     <span class="task-assignee">${assignee}</span>
                 </div>
+            `;
+
+            if (dueDate) {
+                html += `
+                <div class="task-due-row">
+                    <span class="task-due-date">Due: ${dueDate}</span>
+                    ${overdue ? '<span class="task-overdue-pill">Overdue</span>' : ''}
+                </div>
+                `;
+            }
+
+            html += `
                 <div class="task-actions">
                     <button class="task-btn task-btn-edit" data-action="edit">Edit</button>
                     <button class="task-btn task-btn-delete" data-action="delete">Delete</button>
@@ -850,6 +955,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('createTaskBtn').addEventListener('click', () => openTaskModal());
+            document.getElementById('overdueFilter').addEventListener('change', async (event) => {
+                overdueFilter = event.target.value;
+                await fetchTasks();
+            });
             document.getElementById('modalClose').addEventListener('click', closeTaskModal);
             document.getElementById('cancelModalBtn').addEventListener('click', closeTaskModal);
             document.getElementById('taskModalBackdrop').addEventListener('click', (event) => {

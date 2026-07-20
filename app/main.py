@@ -82,14 +82,15 @@ def create_task(payload: TaskCreate) -> TaskResponse:
 def list_tasks(
     status: TaskStatus | None = None,
     priority: TaskPriority | None = None,
+    overdue: bool | None = None,
 ) -> list[TaskResponse]:
     """
-    List tasks, optionally filtered by status and/or priority.
+    List tasks, optionally filtered by status, priority, and overdue.
 
     Invalid query values are rejected by FastAPI with HTTP 422. An empty
     result (including a filter that matches nothing) returns 200 with [].
     """
-    return storage.get_all_tasks(status=status, priority=priority)
+    return storage.get_all_tasks(status=status, priority=priority, overdue=overdue)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])

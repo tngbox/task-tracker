@@ -1,0 +1,11 @@
+# Reflection
+
+I used AI as a structured coding partner across planning, implementation, verification, and documentation. The most useful tools were fast code inspection, patch-based editing, terminal test execution, and browser-assisted UI checks. I first used code and markdown reads to ground implementation in the current branch, because this snapshot did not include every doc file visible in earlier workspace context. That prevented planning against files that did not exist locally.
+
+AI helped most during the backend-first implementation pass. It translated feature requirements into a coherent sequence: model changes, storage logic, route updates, tests, then frontend wiring. That sequence reduced rework because each step had a clear contract. Adding `due_date` to create/update/response while preserving backward compatibility was straightforward, and test additions made behavior explicit. The overdue definition was also clarified early enough to avoid ambiguity later: due date must exist, be before today UTC, and status must not be Done.
+
+One moment AI slowed me down was environment/test execution context. A direct pytest run initially failed with module resolution (`ModuleNotFoundError: app`), and I had to correct execution by setting `PYTHONPATH=.`. This was minor but still a reminder that tool output must be interpreted, not blindly trusted. Another small slowdown was formatting polish in docs where compact markdown needed cleanup after quick generation.
+
+The biggest review intervention I made changed architectural consistency. AI initially blended backend and frontend overdue computation in a way that could drift over time. I kept backend as the source of truth for filtering (`GET /tasks?overdue=true|false`) and limited frontend computation to a visual pill indicator. That decision improved contract clarity: API behavior is testable and deterministic, while UI remains responsive and understandable. I also rejected datetime-with-timezone complexity and kept date-only handling, which better matches this project’s intentional simplicity and learning scope.
+
+Overall, AI was high-leverage when constrained by explicit contracts, acceptance criteria, and quick verification loops. The best outcomes came from pairing generated changes with targeted tests and manual browser checks before documenting final decisions.
