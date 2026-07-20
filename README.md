@@ -176,6 +176,9 @@ Current limitations (by design for this module):
 ## 10. Design decisions
 
 The code and `CLAUDE.md` refer to "ADR-001" as the rationale for the
-no-database / no-auth / minimal design, but no ADR document currently exists in
-this repository. [VERIFY] — add `docs/decisions/adr-001.md` (or similar) if a
-written technical note is expected, then link it here.
+no-database / no-auth / minimal design. That decision is documented in
+[docs/decisions/adr-001.md](docs/decisions/adr-001.md), which covers the
+in-memory task storage choice, the alternatives considered, and the trade-offs.
+
+> Note: `docs/decisions/adr-001.md` is currently a **draft** — some sections are
+> marked for rewrite and contain `[VERIFY]` items to confirm.
