@@ -15,7 +15,15 @@ from pydantic import BaseModel
 
 from app import storage
 from app.business_rules import validate_status_transition
-from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskUpdate
+from app.models import (
+    TaskCommentCreate,
+    TaskCommentResponse,
+    TaskCreate,
+    TaskPriority,
+    TaskResponse,
+    TaskStatus,
+    TaskUpdate,
+)
 
 # Load variables from .env (e.g., PORT, APP_ENV) into the process environment.
 # Safe to call even if no .env file exists yet - it just does nothing in that case.
@@ -154,6 +162,59 @@ def delete_task(task_id: str) -> None:
         raise HTTPException(
             status_code=404,
             detail=f"Task with id {task_id} not found",
+        )
+
+
+@app.get(
+    "/tasks/{task_id}/comments",
+    response_model=list[TaskCommentResponse],
+    tags=["tasks", "comments"],
+)
+def list_task_comments(task_id: str) -> list[TaskCommentResponse]:
+    """List all comments for a task, or raise HTTP 404 if task is missing."""
+    comments = storage.list_comments(task_id)
+    if comments is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Task with id {task_id} not found",
+        )
+    return comments
+
+
+@app.post(
+    "/tasks/{task_id}/comments",
+    response_model=TaskCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["tasks", "comments"],
+)
+def create_task_comment(task_id: str, payload: TaskCommentCreate) -> TaskCommentResponse:
+    """Create a new comment for a task, or raise HTTP 404 if task is missing."""
+    comment = storage.add_comment(task_id, payload)
+    if comment is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Task with id {task_id} not found",
+        )
+    return comment
+
+
+@app.delete(
+    "/tasks/{task_id}/comments/{comment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["tasks", "comments"],
+)
+def delete_task_comment(task_id: str, comment_id: str) -> None:
+    """Delete a task comment, raising 404 for missing task or comment."""
+    task_exists, deleted = storage.delete_comment(task_id, comment_id)
+    if not task_exists:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Task with id {task_id} not found",
+        )
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Comment with id {comment_id} not found for task {task_id}",
         )
 
 

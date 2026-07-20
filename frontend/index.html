@@ -291,6 +291,9 @@
             border-radius: 12px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-header {
@@ -317,6 +320,7 @@
 
         .modal-body {
             padding: 20px;
+            overflow-y: auto;
         }
 
         .form-grid {
@@ -373,6 +377,120 @@
         .form-actions .primary {
             background: #2563eb;
             color: white;
+        }
+
+        .comments-section {
+            margin-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 14px;
+        }
+
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .comments-header h3 {
+            font-size: 15px;
+            color: #1f2937;
+        }
+
+        .comments-count {
+            font-size: 12px;
+            color: #4b5563;
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+
+        .comments-hint {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .comments-list {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 10px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #f9fafb;
+        }
+
+        .comment-text {
+            font-size: 13px;
+            color: #1f2937;
+            margin-bottom: 6px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-time {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .comment-delete-btn {
+            border: none;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .comment-delete-btn:hover {
+            background: #fecaca;
+        }
+
+        .comment-editor {
+            display: grid;
+            gap: 8px;
+        }
+
+        .comment-editor textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+            min-height: 70px;
+            resize: vertical;
+        }
+
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .comment-add-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .comment-add-btn:hover {
+            background: #1d4ed8;
         }
 
         .form-field-error {
@@ -518,6 +636,24 @@
                         <button class="primary" type="submit">Save Task</button>
                     </div>
                 </form>
+                <section class="comments-section" id="commentsSection" aria-live="polite">
+                    <div class="comments-header">
+                        <h3>Comments</h3>
+                        <span class="comments-count" id="commentsCount">0</span>
+                    </div>
+                    <p class="comments-hint" id="commentsHint">Save this task first, then add comments.</p>
+                    <div id="commentsPanel" hidden>
+                        <div id="commentsBannerError" class="form-banner-error" role="alert"></div>
+                        <div id="commentsList" class="comments-list"></div>
+                        <div class="comment-editor">
+                            <textarea id="commentText" maxlength="1000" placeholder="Add a comment"></textarea>
+                            <span id="commentFieldError" class="form-field-error" role="alert">Comment must not be blank</span>
+                            <div class="comment-actions">
+                                <button id="addCommentBtn" class="comment-add-btn" type="button">Add Comment</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -583,6 +719,92 @@
             document.getElementById('titleFieldError').classList.remove('visible');
         }
 
+        function clearCommentErrors() {
+            document.getElementById('commentsBannerError').textContent = '';
+            document.getElementById('commentsBannerError').classList.remove('visible');
+            document.getElementById('commentFieldError').classList.remove('visible');
+        }
+
+        function updateCommentsCount(count) {
+            document.getElementById('commentsCount').textContent = String(count);
+        }
+
+        function renderComments(comments) {
+            const commentsList = document.getElementById('commentsList');
+            updateCommentsCount(comments.length);
+
+            if (!comments.length) {
+                commentsList.innerHTML = '<div style="padding: 10px; border: 1px dashed #d1d5db; border-radius: 8px; color: #6b7280; font-size: 13px;">No comments yet.</div>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => {
+                const createdAt = new Date(comment.created_at).toLocaleString();
+                return `
+                    <article class="comment-item" data-comment-id="${escapeHtml(comment.id)}">
+                        <div class="comment-text">${escapeHtml(comment.text)}</div>
+                        <div class="comment-meta">
+                            <span class="comment-time">${escapeHtml(createdAt)}</span>
+                            <button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(comment.id)}">Delete</button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            commentsList.querySelectorAll('.comment-delete-btn').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const commentId = button.dataset.commentId;
+                    await deleteComment(commentId);
+                });
+            });
+        }
+
+        async function loadComments(taskId) {
+            const commentsList = document.getElementById('commentsList');
+            clearCommentErrors();
+            commentsList.innerHTML = '<div style="padding: 10px; color: #6b7280; font-size: 13px;">Loading comments...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/comments`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                const comments = await response.json();
+                renderComments(comments);
+            } catch (err) {
+                updateCommentsCount(0);
+                commentsList.innerHTML = '';
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to load comments: ${err.message}`;
+                banner.classList.add('visible');
+            }
+        }
+
+        function updateCommentsMode(task) {
+            const commentsHint = document.getElementById('commentsHint');
+            const commentsPanel = document.getElementById('commentsPanel');
+            const commentText = document.getElementById('commentText');
+
+            clearCommentErrors();
+            commentText.value = '';
+
+            if (!task?.id) {
+                commentsHint.style.display = 'block';
+                commentsPanel.hidden = true;
+                updateCommentsCount(0);
+                return;
+            }
+
+            commentsHint.style.display = 'none';
+            commentsPanel.hidden = false;
+            loadComments(task.id);
+        }
+
         function openTaskModal(task = null) {
             const modalBackdrop = document.getElementById('taskModalBackdrop');
             const modalTitle = document.getElementById('modalTitle');
@@ -615,6 +837,8 @@
                 dueDateInput.value = '';
             }
 
+            updateCommentsMode(task);
+
             modalBackdrop.classList.add('open');
             titleInput.focus();
         }
@@ -623,6 +847,7 @@
             document.getElementById('taskModalBackdrop').classList.remove('open');
             document.getElementById('taskForm').reset();
             clearModalErrors();
+            updateCommentsMode(null);
             editingTaskId = null;
         }
 
@@ -799,6 +1024,76 @@
             }
         }
 
+        async function addComment() {
+            clearCommentErrors();
+
+            if (!editingTaskId) {
+                return;
+            }
+
+            const commentTextInput = document.getElementById('commentText');
+            const addCommentBtn = document.getElementById('addCommentBtn');
+            const text = commentTextInput.value.trim();
+
+            if (!text) {
+                document.getElementById('commentFieldError').classList.add('visible');
+                commentTextInput.focus();
+                return;
+            }
+
+            addCommentBtn.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${editingTaskId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                commentTextInput.value = '';
+                await loadComments(editingTaskId);
+            } catch (err) {
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to add comment: ${err.message}`;
+                banner.classList.add('visible');
+            } finally {
+                addCommentBtn.disabled = false;
+            }
+        }
+
+        async function deleteComment(commentId) {
+            if (!editingTaskId) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${editingTaskId}/comments/${commentId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                await loadComments(editingTaskId);
+            } catch (err) {
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to delete comment: ${err.message}`;
+                banner.classList.add('visible');
+            }
+        }
+
         // ============ Rendering Functions ============
 
         function renderBoard(tasks) {
@@ -967,6 +1262,7 @@
                 }
             });
             document.getElementById('taskForm').addEventListener('submit', saveTask);
+            document.getElementById('addCommentBtn').addEventListener('click', addComment);
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
                     closeTaskModal();

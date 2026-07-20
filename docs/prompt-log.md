@@ -74,3 +74,46 @@ AI returned:
 
 Decision:
 - Accepted and then extended with short frontend usage section.
+
+## Feature C: Task Comments
+
+### Prompt C1
+Prompt:
+"Act as senior frontend and backend developer, read the project files and plan feature C comments: backend list/add/delete with non-blank validation and 404 handling, then frontend comments section."
+
+AI returned:
+- Backend-first plan: models -> storage -> routes -> tests -> frontend.
+- Proposed task-scoped comments endpoints and in-memory store keyed by task id.
+
+Decision:
+- Accepted backend-first sequencing and task-scoped endpoint design.
+- Edited to keep initial frontend scope in edit modal only.
+
+### Prompt C2
+Prompt:
+"start implementation"
+
+AI returned:
+- Implemented comment models, storage ops, and API endpoints.
+- Added tests for add/list/delete, blank 422, and missing task/comment 404.
+- Added edit modal comments UI for list/add/delete.
+
+Decision:
+- Accepted implementation and tests.
+- Edited CSS after review to make modal body scrollable so comment controls remain visible.
+
+### Prompt C3 (weak -> stronger)
+Weak prompt:
+"add comments"
+
+Why weak:
+- Missing endpoint contract, validation rules, error handling, and UI location.
+
+Stronger prompt:
+"Add task comments as a separate resource with GET/POST/DELETE under /tasks/{task_id}/comments; enforce trimmed non-blank text and 404 for missing task/comment; add integration tests for add/list/delete and errors; add comments section in edit modal with add and delete actions."
+
+AI returned:
+- Complete implementation aligned with backend contract and UI scope.
+
+Decision:
+- Accepted with one scope correction: deferred card comment count to avoid extra API churn in this iteration.

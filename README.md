@@ -86,6 +86,36 @@ Overdue logic:
 - `due_date` is before today (UTC)
 - `status` is not `Done`
 
+### Add and list task comments
+
+Add a comment:
+
+```bash
+curl -X POST http://localhost:8000/tasks/<task_id>/comments \
+	-H "Content-Type: application/json" \
+	-d '{
+		"text": "Need to clarify acceptance criteria"
+	}'
+```
+
+List comments:
+
+```bash
+curl http://localhost:8000/tasks/<task_id>/comments
+```
+
+Delete a comment:
+
+```bash
+curl -X DELETE http://localhost:8000/tasks/<task_id>/comments/<comment_id>
+```
+
+Comment rules:
+- `text` is required
+- blank/whitespace-only text returns HTTP 422
+- missing task returns HTTP 404
+- missing comment on an existing task returns HTTP 404
+
 ### due_date format notes
 
 - `due_date` is optional.
@@ -96,6 +126,7 @@ Overdue logic:
 
 - Open `frontend/index.html` in your browser while the API is running at `http://127.0.0.1:8000`.
 - In the task modal, use the new **Due Date** field to set or clear a task due date.
+- In **Edit Task** mode, use the **Comments** section to list, add, and delete comments.
 - Use the header **Filter** dropdown to switch between:
 	- `All tasks`
 	- `Overdue only`

@@ -229,3 +229,88 @@ def test_delete_missing_returns_404(client):
     response = client.delete("/tasks/missing-id")
     assert response.status_code == 404
     assert response.json()["detail"] == "Task with id missing-id not found"
+
+
+# --------------------------------------------------------------------------
+# Comments endpoints
+# --------------------------------------------------------------------------
+
+def test_add_comment_returns_201_with_body(client, created_task):
+    task_id = created_task["id"]
+
+    response = client.post(
+        f"/tasks/{task_id}/comments",
+        json={"text": "First comment"},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert isinstance(body["id"], str) and body["id"]
+    assert body["task_id"] == task_id
+    assert body["text"] == "First comment"
+    assert "created_at" in body
+
+
+def test_add_comment_blank_text_returns_422(client, created_task):
+    task_id = created_task["id"]
+
+    response = client.post(
+        f"/tasks/{task_id}/comments",
+        json={"text": "   "},
+    )
+    assert response.status_code == 422
+
+
+def test_list_comments_for_task_returns_200_with_items(client, created_task):
+    task_id = created_task["id"]
+
+    first = client.post(f"/tasks/{task_id}/comments", json={"text": "one"})
+    second = client.post(f"/tasks/{task_id}/comments", json={"text": "two"})
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    response = client.get(f"/tasks/{task_id}/comments")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    assert [comment["text"] for comment in body] == ["one", "two"]
+
+
+def test_delete_comment_returns_204(client, created_task):
+    task_id = created_task["id"]
+    create_response = client.post(f"/tasks/{task_id}/comments", json={"text": "remove me"})
+    assert create_response.status_code == 201
+    comment_id = create_response.json()["id"]
+
+    response = client.delete(f"/tasks/{task_id}/comments/{comment_id}")
+    assert response.status_code == 204
+    assert response.content == b""
+
+    list_response = client.get(f"/tasks/{task_id}/comments")
+    assert list_response.status_code == 200
+    assert list_response.json() == []
+
+
+def test_list_comments_missing_task_returns_404(client):
+    response = client.get("/tasks/missing-id/comments")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task with id missing-id not found"
+
+
+def test_add_comment_missing_task_returns_404(client):
+    response = client.post("/tasks/missing-id/comments", json={"text": "x"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task with id missing-id not found"
+
+
+def test_delete_comment_missing_task_returns_404(client):
+    response = client.delete("/tasks/missing-id/comments/missing-comment")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task with id missing-id not found"
+
+
+def test_delete_comment_missing_comment_returns_404(client, created_task):
+    task_id = created_task["id"]
+
+    response = client.delete(f"/tasks/{task_id}/comments/missing-comment")
+    assert response.status_code == 404
+    assert response.json()["detail"] == f"Comment with id missing-comment not found for task {task_id}"

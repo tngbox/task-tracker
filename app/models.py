@@ -43,6 +43,19 @@ def _validate_title(value: str) -> str:
     return stripped
 
 
+def _validate_comment_text(value: str) -> str:
+    """
+    Shared comment text rule: strip whitespace, reject blank values, and
+    enforce a reasonable max length to prevent unbounded payloads.
+    """
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("comment text must not be blank")
+    if len(stripped) > 1000:
+        raise ValueError("comment text must be at most 1000 characters")
+    return stripped
+
+
 class TaskCreate(BaseModel):
     """Payload for creating a new task."""
 
@@ -95,3 +108,27 @@ class TaskResponse(BaseModel):
     due_date: Optional[date]
     created_at: datetime
     updated_at: datetime
+
+
+class TaskCommentCreate(BaseModel):
+    """Payload for creating a task comment."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+
+    @field_validator("text")
+    @classmethod
+    def _check_text(cls, value: str) -> str:
+        return _validate_comment_text(value)
+
+
+class TaskCommentResponse(BaseModel):
+    """Task comment representation returned by the API."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    task_id: str
+    text: str
+    created_at: datetime
