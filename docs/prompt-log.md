@@ -4,7 +4,26 @@
 
 ### Prompt A1
 Prompt:
-"Act as senior frontend and backend developer, read project files and plan due dates + overdue filter."
+"Act as senior frontend and backend developer, read existing project files, go through all .md files and plan due dates + overdue filter features as below:
+1. Expected backend work: Add optional due_date validation. Support create/update. Decide whether overdue is computed in the backend or UI. Optional query filter for overdue.
+2. Expected frontend work: Add due date to the modal. Show due date or overdue pill on cards. Add an overdue filter or visual indicator.
+3. Good tests to include: Valid due date, invalid date format, overdue detection, update due date, filter returns only overdue tasks.
+First plan for backend implementation, then move to frontend.
+Don’t execute at this point just provide the plan for implementation for my approval.
+
+Current project:
+- Backend: Python/FastAPI Task Tracker API.
+- Main task fields: id, title, description, status, priority, assignee.
+- Status values are exactly: ToDo, InProgress, Done.
+- Priority values are exactly: Low, Medium, High.
+- The frontend will live in frontend/index.html using vanilla HTML, CSS, and JavaScript.
+
+Workflow rules:
+- Work in small steps.
+- Do not rewrite the whole file unless I explicitly ask.
+- Do not add frameworks, build tools, auth, accounts, real-time sync, or new backend features.
+- Treat your answer as a draft. I will inspect, run, test, and refine it."
+
 
 AI returned:
 - Backend-first plan with model/storage/route/test sequence.
@@ -16,7 +35,7 @@ Decision:
 
 ### Prompt A2
 Prompt:
-"start implementation"
+"start implementation the implementation of the following plan [I pasted here the plan provided in prompt A1]"
 
 AI returned:
 - Implemented `due_date` in models, storage, routes.
@@ -46,7 +65,7 @@ Decision:
 
 ### Prompt B1
 Prompt:
-"Expected backend work: decide if overdue is backend or UI, optional query filter for overdue."
+"Expected backend work: propose two plans for overdue is on backend or UI, optional query filter for overdue."
 
 AI returned:
 - Recommended backend canonical logic + optional frontend visual helper.
@@ -79,7 +98,26 @@ Decision:
 
 ### Prompt C1
 Prompt:
-"Act as senior frontend and backend developer, read the project files and plan feature C comments: backend list/add/delete with non-blank validation and 404 handling, then frontend comments section."
+"Act as senior frontend and backend developer, read existing project files, go through all .md files and plan task comments features as below:
+
+1. Add comment model or task comment list.
+2. Expected backend work: Support list/add/delete comment behavior with non-blank text validation and not-found handling.
+3. Expected frontend work: Add a comments section in the edit modal or a small task detail area. Show comment count on cards if useful.
+4. Good tests to include: Add comment, reject blank comment, list comments for a task, delete comment, 404 for missing task/comment.
+Propose a plan for backend implementation then move to frontend, don’t execute wait for my approval
+Current project:
+- Backend: Python/FastAPI Task Tracker API.
+- Main task fields: id, title, description, status, priority, assignee.
+- Status values are exactly: ToDo, InProgress, Done.
+- Priority values are exactly: Low, Medium, High.
+- The frontend will live in frontend/index.html using vanilla HTML, CSS, and JavaScript.
+
+Workflow rules:
+- Work in small steps.
+- Do not rewrite the whole file unless I explicitly ask.
+- Do not add frameworks, build tools, auth, accounts, real-time sync, or new backend features.
+- Treat your answer as a draft. I will inspect, run, test, and refine it.
+
 
 AI returned:
 - Backend-first plan: models -> storage -> routes -> tests -> frontend.
@@ -91,7 +129,7 @@ Decision:
 
 ### Prompt C2
 Prompt:
-"start implementation"
+"start implementation of the porposed plan for task comments [I pasted here the proposed plan from Prompt C1]"
 
 AI returned:
 - Implemented comment models, storage ops, and API endpoints.
@@ -117,3 +155,13 @@ AI returned:
 
 Decision:
 - Accepted with one scope correction: deferred card comment count to avoid extra API churn in this iteration.
+
+### Prompt C4 (added missing functionality)
+Prompt:
+Review the popup window of adding a task, the view doesn't fit the browser and user are unable to click on save comment button. Add a scroll bar for user to nagigate the popup window up and down"
+
+AI returned:
+- Popup scroll down functionality
+
+Decision:
+- Accepted this enhancement on the popup window

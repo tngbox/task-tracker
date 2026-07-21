@@ -25,7 +25,7 @@ Acceptance criteria:
 - Given a task has no due date, when board renders, then no due date row is shown.
 
 AI assumption corrected (Feature A):
-- Initial AI tendency was to use full datetime (`due_at`) and timezone conversion. We corrected this to date-only (`due_date`) to match project simplicity and avoid timezone complexity.
+- Initial AI tendency was to use full datetime (`due_at`) and timezone conversion. I corrected this to date-only (`due_date`) to match project simplicity and avoid timezone complexity.
 
 ## Feature B: Overdue Filter
 
@@ -51,7 +51,7 @@ Acceptance criteria:
 - Given tasks with future and null due dates exist, when filter is `Not overdue`, then those tasks remain visible.
 
 AI assumption corrected (Feature B):
-- AI initially split overdue logic between backend and frontend inconsistently. We corrected to canonical backend filtering (`overdue=true|false`) plus frontend display helper only for visual pill rendering.
+- AI initially split overdue logic between backend and frontend inconsistently. I corrected to canonical backend filtering (`overdue=true|false`) plus frontend display helper only for visual pill rendering.
 
 ## Feature C: Task Comments
 
@@ -85,4 +85,4 @@ Acceptance criteria:
 - Given task exists but comment id does not exist, when I delete comment, then API returns 404 with comment-not-found detail.
 
 AI assumption corrected (Feature C):
-- AI initially suggested adding comment counts to task cards immediately, which would require extra per-card API calls or contract changes. We deferred card counts to keep scope focused on required list/add/delete behavior and modal UX.
+- AI initially suggested adding comment counts to task cards immediately, which would require extra per-card API calls or contract changes. I deferred card counts to keep scope focused on required list/add/delete behavior and modal UX.
