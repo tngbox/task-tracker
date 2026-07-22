@@ -1,0 +1,11 @@
+# Reflection
+
+For features A, B, and C, I used AI as a structured implementation partner rather than a code generator I follow blindly. The main tools I used were VS Code Github + Copilot for: repository file reads (to align with existing architecture and docs), patch-based file edits (to keep changes focused and reviewable), terminal test runs (full and targeted pytest), and quick diagnostics checks for edited files. This combination worked well because the project is intentionally simple: in-memory state, thin FastAPI routes, and one static frontend file.
+
+The strongest AI contribution was sequencing Feature A,B and C. The backend-first plan (models, storage, routes, tests, then frontend) reduced context switching and made failures easier to isolate. For Overdue data and Task comments, that produced a clear resource contract with list/add/delete endpoints, consistent 404 behavior, and non-blank text validation in the model layer. Once backend tests passed, frontend work in the edit modal was straightforward because endpoint behavior was already explicit.
+
+One place AI slowed me down was execution context and UI ergonomics. Test execution initially needed environment correction (`PYTHONPATH=.`), and while the first comments UI was functional, the modal became too long on smaller screens. The comment action area could be pushed out of view, which made the feature feel broken even when API calls were correct. That required a follow-up pass to constrain modal height and add internal scrolling.
+
+The most important review intervention I made was scope control and contract clarity. AI suggested adding comment counts on task cards early, but that would either introduce extra per-card API calls or require changing task response shape in the same iteration. I deferred that to keep Feature C aligned to the explicit requirement: reliable list/add/delete comments with strong validation and not-found handling. I also kept backend as the source of truth for comment existence and errors, while frontend stayed focused on presentation and request flow.
+
+Overall, AI added the most value when prompts specified acceptance criteria and failure cases up front. The highest-quality outcomes came from combining generated changes with targeted break tests, manual browser checks, and deliberate scope pruning.

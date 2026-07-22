@@ -7,16 +7,19 @@ state lives in memory and is lost when the server restarts.
 
 ## 1. Project overview
 
-The API exposes CRUD endpoints for tasks plus a health check:
+The API exposes CRUD endpoints for tasks, task comments, and a health check:
 
-| Method | Path               | Purpose                                  |
-| ------ | ------------------ | ---------------------------------------- |
-| GET    | `/health`          | Liveness check (`status` + UTC timestamp)|
-| POST   | `/tasks`           | Create a task                            |
-| GET    | `/tasks`           | List tasks (optional `status`/`priority` filters) |
-| GET    | `/tasks/{task_id}` | Get one task by id                       |
-| PATCH  | `/tasks/{task_id}` | Partially update a task                  |
-| DELETE | `/tasks/{task_id}` | Delete a task                            |
+| Method | Path                                  | Purpose |
+| ------ | ------------------------------------- | ------- |
+| GET    | `/health`                             | Liveness check (`status` + UTC timestamp) |
+| POST   | `/tasks`                              | Create a task |
+| GET    | `/tasks`                              | List tasks (optional `status`/`priority`/`overdue` filters) |
+| GET    | `/tasks/{task_id}`                    | Get one task by id |
+| PATCH  | `/tasks/{task_id}`                    | Partially update a task |
+| DELETE | `/tasks/{task_id}`                    | Delete a task |
+| GET    | `/tasks/{task_id}/comments`           | List comments for a task |
+| POST   | `/tasks/{task_id}/comments`           | Add a comment to a task |
+| DELETE | `/tasks/{task_id}/comments/{comment_id}` | Delete a comment from a task |
 
 Interactive API docs are auto-generated at `http://localhost:8000/docs` while
 the server is running.
@@ -75,6 +78,72 @@ a browser (it calls the API at `127.0.0.1:8000`):
 ```bash
 # macOS: open frontend/index.html   |   Windows: start frontend/index.html
 ```
+
+## 4.1 Feature usage (due dates, overdue filter, comments)
+
+Create a task with a due date:
+
+```bash
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Submit project milestone",
+    "description": "Prepare final module handoff",
+    "priority": "High",
+    "due_date": "2026-08-01"
+  }'
+```
+
+Update and clear due date:
+
+```bash
+curl -X PATCH http://localhost:8000/tasks/<task_id> \
+  -H "Content-Type: application/json" \
+  -d '{"due_date": "2026-08-15"}'
+
+curl -X PATCH http://localhost:8000/tasks/<task_id> \
+  -H "Content-Type: application/json" \
+  -d '{"due_date": null}'
+```
+
+Filter by overdue state:
+
+```bash
+curl "http://localhost:8000/tasks?overdue=true"
+curl "http://localhost:8000/tasks?overdue=false"
+```
+
+Overdue logic:
+
+- `due_date` exists
+- `due_date` is before today (UTC)
+- `status` is not `Done`
+
+Add/list/delete comments:
+
+```bash
+curl -X POST http://localhost:8000/tasks/<task_id>/comments \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Need to clarify acceptance criteria"}'
+
+curl http://localhost:8000/tasks/<task_id>/comments
+
+curl -X DELETE http://localhost:8000/tasks/<task_id>/comments/<comment_id>
+```
+
+Comment rules:
+
+- `text` is required and trimmed
+- blank/whitespace-only text returns HTTP 422
+- missing task returns HTTP 404
+- missing comment on an existing task returns HTTP 404
+
+Frontend support in `frontend/index.html`:
+
+- Due date input in task modal
+- Overdue filter dropdown (`All tasks`, `Overdue only`, `Not overdue`)
+- Overdue pill on overdue task cards
+- Comments section in edit modal (list/add/delete)
 
 ## 5. Run tests
 
@@ -164,6 +233,9 @@ Conventions:
 - Valid status transitions: `ToDo → InProgress`, `InProgress → Done`,
   `Done → InProgress`. Any other move — including same → same — returns HTTP 422.
 - Task `title` is required, trimmed, non-empty, and at most 200 characters.
+- Task `due_date` is optional (`YYYY-MM-DD`) and can be cleared via `null`.
+- `GET /tasks` supports optional `overdue=true|false` filtering.
+- Comments are task-scoped resources under `/tasks/{task_id}/comments`.
 - Create/update payloads forbid unknown fields (HTTP 422).
 
 Current limitations (by design for this module):
@@ -172,6 +244,16 @@ Current limitations (by design for this module):
 - **No authentication or authorization.**
 - **CORS is wide open** (`allow_origins=["*"]`) for local frontend development.
 - **Not production-ready and not deployed** — this is a learning project.
+
+## 9.1 Midcourse docs
+
+Midcourse feature artifacts are available in `docs/midcourse`:
+
+- `docs/midcourse/mini-adr.md`
+- `docs/midcourse/prompt-log.md`
+- `docs/midcourse/reflection.md`
+- `docs/midcourse/user-stories.md`
+- `docs/midcourse/verification.md`
 
 ## 10. Design decisions
 

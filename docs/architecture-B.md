@@ -2,11 +2,11 @@
 
 ## What the app does
 
-Task Tracker is a learning project providing a FastAPI REST API for task CRUD operations and a static vanilla-JavaScript Kanban board. Tasks can be created, listed, updated, moved through defined statuses, and deleted; data is held only in memory, so it is lost when the API process restarts.
+Task Tracker is a learning project providing a FastAPI REST API for task CRUD operations and a static vanilla-JavaScript Kanban board. Tasks can be created, listed, updated, moved through defined statuses, and deleted; they also support optional due dates and task-scoped comments, and list queries support overdue filtering. Data is held only in memory, so it is lost when the API process restarts.
 
 ## Data model
 
-The central entity is a task: `id`, `title`, `description`, `status`, `priority`, `assignee`, `created_at`, and `updated_at`. Status is one of `ToDo`, `InProgress`, or `Done`; priority is `Low`, `Medium`, or `High`. New tasks default to `ToDo` and `Medium`.
+The central entity is a task: `id`, `title`, `description`, `status`, `priority`, `assignee`, `due_date`, `created_at`, and `updated_at`. Status is one of `ToDo`, `InProgress`, or `Done`; priority is `Low`, `Medium`, or `High`. New tasks default to `ToDo` and `Medium`. A task comment entity is also exposed via comment routes (`id`, `task_id`, `text`, `created_at`).
 
 ## Request flow: create a task
 
@@ -14,9 +14,9 @@ The frontend collects and trims form values, checks that the title is non-empty,
 
 ## Key files
 
-- [app/main.py](D:/Cursor_Projects/task-tracker/app/main.py) — FastAPI app, CORS middleware, `/health`, and `/tasks` route handlers.
-- [app/models.py](D:/Cursor_Projects/task-tracker/app/models.py) — task schemas, status/priority enums, defaults, and field validation.
-- [app/storage.py](D:/Cursor_Projects/task-tracker/app/storage.py) — in-memory dictionary, UUID creation, timestamps, and CRUD storage operations.
+- [app/main.py](D:/Cursor_Projects/task-tracker/app/main.py) — FastAPI app, CORS middleware, `/health`, `/tasks`, and comments route handlers.
+- [app/models.py](D:/Cursor_Projects/task-tracker/app/models.py) — task/comment schemas, status/priority enums, defaults, and validation.
+- [app/storage.py](D:/Cursor_Projects/task-tracker/app/storage.py) — in-memory task/comment stores, UUID creation, timestamps, CRUD, and overdue filtering.
 - [app/business_rules.py](D:/Cursor_Projects/task-tracker/app/business_rules.py) — permitted status-transition rule enforcement.
 - [frontend/index.html](D:/Cursor_Projects/task-tracker/frontend/index.html) — static Kanban UI, browser state, rendering, and API requests.
 - [tests/test_tasks.py](D:/Cursor_Projects/task-tracker/tests/test_tasks.py) — API behavior tests.
@@ -25,7 +25,7 @@ The frontend collects and trims form values, checks that the title is non-empty,
 
 ## Conventions
 
-Pydantic rejects unknown create/update fields; titles are trimmed, required, non-empty, and limited to 200 characters. `PATCH` is partial; explicit `null` is rejected for non-nullable task fields but permitted for `assignee`. Status changes must follow `ToDo → InProgress → Done`, with `Done → InProgress` also allowed; invalid or same-status changes return HTTP 422. Missing task IDs return HTTP 404. The frontend calls `http://127.0.0.1:8000`, uses the backend status values exactly, and maintains loading, empty, error, and populated UI states.
+Pydantic rejects unknown create/update fields; titles are trimmed, required, non-empty, and limited to 200 characters. Comments require trimmed non-blank text with max length 1000. `PATCH` is partial; explicit `null` is rejected for non-nullable task fields but permitted for `assignee` and `due_date`. Status changes must follow `ToDo → InProgress → Done`, with `Done → InProgress` also allowed; invalid or same-status changes return HTTP 422. Missing task/comment IDs return HTTP 404. Overdue is computed on backend (`due_date < today UTC` and `status != Done`) and filterable via `GET /tasks?overdue=true|false`. The frontend calls `http://127.0.0.1:8000`, uses backend status values exactly, and supports due dates, overdue filter, and comment list/add/delete in the task modal.
 
 ## Not visible or assumptions
 

@@ -162,6 +162,28 @@
             color: #6b7280;
         }
 
+        .task-due-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .task-due-date {
+            color: #4b5563;
+        }
+
+        .task-overdue-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
         .task-btn {
             width: 100%;
             padding: 6px 12px;
@@ -214,6 +236,26 @@
             margin-bottom: 24px;
         }
 
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-toolbar label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .header-toolbar select {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+            background: white;
+        }
+
         .create-btn {
             padding: 10px 16px;
             border: none;
@@ -249,6 +291,9 @@
             border-radius: 12px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-header {
@@ -275,6 +320,7 @@
 
         .modal-body {
             padding: 20px;
+            overflow-y: auto;
         }
 
         .form-grid {
@@ -333,6 +379,120 @@
             color: white;
         }
 
+        .comments-section {
+            margin-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 14px;
+        }
+
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .comments-header h3 {
+            font-size: 15px;
+            color: #1f2937;
+        }
+
+        .comments-count {
+            font-size: 12px;
+            color: #4b5563;
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+
+        .comments-hint {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .comments-list {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 10px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #f9fafb;
+        }
+
+        .comment-text {
+            font-size: 13px;
+            color: #1f2937;
+            margin-bottom: 6px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-time {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .comment-delete-btn {
+            border: none;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .comment-delete-btn:hover {
+            background: #fecaca;
+        }
+
+        .comment-editor {
+            display: grid;
+            gap: 8px;
+        }
+
+        .comment-editor textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+            min-height: 70px;
+            resize: vertical;
+        }
+
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .comment-add-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .comment-add-btn:hover {
+            background: #1d4ed8;
+        }
+
         .form-field-error {
             font-size: 12px;
             color: #dc2626;
@@ -363,6 +523,16 @@
             .board {
                 grid-template-columns: 1fr;
             }
+
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-toolbar {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -373,7 +543,15 @@
                 <h1>📋 Task Tracker</h1>
                 <p>A simple Kanban board to manage your tasks</p>
             </div>
-            <button class="create-btn" id="createTaskBtn">+ New Task</button>
+            <div class="header-toolbar">
+                <label for="overdueFilter">Filter</label>
+                <select id="overdueFilter" aria-label="Filter tasks by overdue state">
+                    <option value="all">All tasks</option>
+                    <option value="overdue">Overdue only</option>
+                    <option value="not_overdue">Not overdue</option>
+                </select>
+                <button class="create-btn" id="createTaskBtn">+ New Task</button>
+            </div>
         </div>
 
         <div id="stateIndicator"></div>
@@ -448,12 +626,34 @@
                             <label for="taskAssignee">Assignee</label>
                             <input id="taskAssignee" name="assignee" />
                         </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">Due Date</label>
+                            <input id="taskDueDate" name="due_date" type="date" />
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button class="secondary" id="cancelModalBtn" type="button">Cancel</button>
                         <button class="primary" type="submit">Save Task</button>
                     </div>
                 </form>
+                <section class="comments-section" id="commentsSection" aria-live="polite">
+                    <div class="comments-header">
+                        <h3>Comments</h3>
+                        <span class="comments-count" id="commentsCount">0</span>
+                    </div>
+                    <p class="comments-hint" id="commentsHint">Save this task first, then add comments.</p>
+                    <div id="commentsPanel" hidden>
+                        <div id="commentsBannerError" class="form-banner-error" role="alert"></div>
+                        <div id="commentsList" class="comments-list"></div>
+                        <div class="comment-editor">
+                            <textarea id="commentText" maxlength="1000" placeholder="Add a comment"></textarea>
+                            <span id="commentFieldError" class="form-field-error" role="alert">Comment must not be blank</span>
+                            <div class="comment-actions">
+                                <button id="addCommentBtn" class="comment-add-btn" type="button">Add Comment</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -466,6 +666,7 @@
         let draggedTaskId = null;
         let dragSourceStatus = null;
         let editingTaskId = null;
+        let overdueFilter = 'all';
 
         // API configuration
         const API_BASE = 'http://127.0.0.1:8000';
@@ -481,6 +682,16 @@
                 "'": '&#039;'
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function isTaskOverdue(task) {
+            if (!task.due_date || task.status === 'Done') {
+                return false;
+            }
+            const now = new Date();
+            const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            const dueDateUtc = new Date(`${task.due_date}T00:00:00Z`);
+            return dueDateUtc < todayUtc;
         }
 
         // ============ State Management ============
@@ -508,6 +719,92 @@
             document.getElementById('titleFieldError').classList.remove('visible');
         }
 
+        function clearCommentErrors() {
+            document.getElementById('commentsBannerError').textContent = '';
+            document.getElementById('commentsBannerError').classList.remove('visible');
+            document.getElementById('commentFieldError').classList.remove('visible');
+        }
+
+        function updateCommentsCount(count) {
+            document.getElementById('commentsCount').textContent = String(count);
+        }
+
+        function renderComments(comments) {
+            const commentsList = document.getElementById('commentsList');
+            updateCommentsCount(comments.length);
+
+            if (!comments.length) {
+                commentsList.innerHTML = '<div style="padding: 10px; border: 1px dashed #d1d5db; border-radius: 8px; color: #6b7280; font-size: 13px;">No comments yet.</div>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => {
+                const createdAt = new Date(comment.created_at).toLocaleString();
+                return `
+                    <article class="comment-item" data-comment-id="${escapeHtml(comment.id)}">
+                        <div class="comment-text">${escapeHtml(comment.text)}</div>
+                        <div class="comment-meta">
+                            <span class="comment-time">${escapeHtml(createdAt)}</span>
+                            <button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(comment.id)}">Delete</button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            commentsList.querySelectorAll('.comment-delete-btn').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const commentId = button.dataset.commentId;
+                    await deleteComment(commentId);
+                });
+            });
+        }
+
+        async function loadComments(taskId) {
+            const commentsList = document.getElementById('commentsList');
+            clearCommentErrors();
+            commentsList.innerHTML = '<div style="padding: 10px; color: #6b7280; font-size: 13px;">Loading comments...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/comments`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                const comments = await response.json();
+                renderComments(comments);
+            } catch (err) {
+                updateCommentsCount(0);
+                commentsList.innerHTML = '';
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to load comments: ${err.message}`;
+                banner.classList.add('visible');
+            }
+        }
+
+        function updateCommentsMode(task) {
+            const commentsHint = document.getElementById('commentsHint');
+            const commentsPanel = document.getElementById('commentsPanel');
+            const commentText = document.getElementById('commentText');
+
+            clearCommentErrors();
+            commentText.value = '';
+
+            if (!task?.id) {
+                commentsHint.style.display = 'block';
+                commentsPanel.hidden = true;
+                updateCommentsCount(0);
+                return;
+            }
+
+            commentsHint.style.display = 'none';
+            commentsPanel.hidden = false;
+            loadComments(task.id);
+        }
+
         function openTaskModal(task = null) {
             const modalBackdrop = document.getElementById('taskModalBackdrop');
             const modalTitle = document.getElementById('modalTitle');
@@ -517,6 +814,7 @@
             const statusInput = document.getElementById('taskStatus');
             const priorityInput = document.getElementById('taskPriority');
             const assigneeInput = document.getElementById('taskAssignee');
+            const dueDateInput = document.getElementById('taskDueDate');
             const taskIdInput = document.getElementById('taskId');
 
             clearModalErrors();
@@ -530,12 +828,16 @@
                 statusInput.value = task.status || 'ToDo';
                 priorityInput.value = task.priority || 'Medium';
                 assigneeInput.value = task.assignee || '';
+                dueDateInput.value = task.due_date || '';
             } else {
                 form.reset();
                 taskIdInput.value = '';
                 statusInput.value = 'ToDo';
                 priorityInput.value = 'Medium';
+                dueDateInput.value = '';
             }
+
+            updateCommentsMode(task);
 
             modalBackdrop.classList.add('open');
             titleInput.focus();
@@ -545,6 +847,7 @@
             document.getElementById('taskModalBackdrop').classList.remove('open');
             document.getElementById('taskForm').reset();
             clearModalErrors();
+            updateCommentsMode(null);
             editingTaskId = null;
         }
 
@@ -556,7 +859,16 @@
             updateStateIndicator();
 
             try {
-                const response = await fetch(`${API_BASE}/tasks`);
+                const params = new URLSearchParams();
+                if (overdueFilter === 'overdue') {
+                    params.set('overdue', 'true');
+                } else if (overdueFilter === 'not_overdue') {
+                    params.set('overdue', 'false');
+                }
+                const queryString = params.toString();
+                const url = queryString ? `${API_BASE}/tasks?${queryString}` : `${API_BASE}/tasks`;
+
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -623,6 +935,7 @@
             const status = formData.get('status').toString();
             const priority = formData.get('priority').toString();
             const assignee = formData.get('assignee').toString().trim() || null;
+            const dueDate = formData.get('due_date').toString().trim() || null;
 
             // Client validation
             if (!title) {
@@ -640,8 +953,11 @@
                 if (status !== existing?.status) {
                     payload.status = status;
                 }
+                if (dueDate !== (existing?.due_date ?? null)) {
+                    payload.due_date = dueDate;
+                }
             } else {
-                payload = { title, description, status, priority, assignee };
+                payload = { title, description, status, priority, assignee, due_date: dueDate };
             }
 
             try {
@@ -708,6 +1024,76 @@
             }
         }
 
+        async function addComment() {
+            clearCommentErrors();
+
+            if (!editingTaskId) {
+                return;
+            }
+
+            const commentTextInput = document.getElementById('commentText');
+            const addCommentBtn = document.getElementById('addCommentBtn');
+            const text = commentTextInput.value.trim();
+
+            if (!text) {
+                document.getElementById('commentFieldError').classList.add('visible');
+                commentTextInput.focus();
+                return;
+            }
+
+            addCommentBtn.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${editingTaskId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                commentTextInput.value = '';
+                await loadComments(editingTaskId);
+            } catch (err) {
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to add comment: ${err.message}`;
+                banner.classList.add('visible');
+            } finally {
+                addCommentBtn.disabled = false;
+            }
+        }
+
+        async function deleteComment(commentId) {
+            if (!editingTaskId) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${editingTaskId}/comments/${commentId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const message = (typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail)) || `HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                await loadComments(editingTaskId);
+            } catch (err) {
+                const banner = document.getElementById('commentsBannerError');
+                banner.textContent = `Failed to delete comment: ${err.message}`;
+                banner.classList.add('visible');
+            }
+        }
+
         // ============ Rendering Functions ============
 
         function renderBoard(tasks) {
@@ -760,6 +1146,8 @@
             const title = escapeHtml(task.title);
             const description = task.description ? escapeHtml(task.description) : '';
             const assignee = task.assignee ? escapeHtml(task.assignee) : 'Unassigned';
+            const dueDate = task.due_date ? escapeHtml(task.due_date) : null;
+            const overdue = isTaskOverdue(task);
 
             let html = `
                 <div class="task-title">${title}</div>
@@ -774,6 +1162,18 @@
                     <span class="task-priority ${task.priority.toLowerCase()}">${task.priority}</span>
                     <span class="task-assignee">${assignee}</span>
                 </div>
+            `;
+
+            if (dueDate) {
+                html += `
+                <div class="task-due-row">
+                    <span class="task-due-date">Due: ${dueDate}</span>
+                    ${overdue ? '<span class="task-overdue-pill">Overdue</span>' : ''}
+                </div>
+                `;
+            }
+
+            html += `
                 <div class="task-actions">
                     <button class="task-btn task-btn-edit" data-action="edit">Edit</button>
                     <button class="task-btn task-btn-delete" data-action="delete">Delete</button>
@@ -850,6 +1250,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('createTaskBtn').addEventListener('click', () => openTaskModal());
+            document.getElementById('overdueFilter').addEventListener('change', async (event) => {
+                overdueFilter = event.target.value;
+                await fetchTasks();
+            });
             document.getElementById('modalClose').addEventListener('click', closeTaskModal);
             document.getElementById('cancelModalBtn').addEventListener('click', closeTaskModal);
             document.getElementById('taskModalBackdrop').addEventListener('click', (event) => {
@@ -858,6 +1262,7 @@
                 }
             });
             document.getElementById('taskForm').addEventListener('submit', saveTask);
+            document.getElementById('addCommentBtn').addEventListener('click', addComment);
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
                     closeTaskModal();

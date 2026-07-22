@@ -7,7 +7,7 @@ describes the shape and validation rules of task data (per ADR-001, this
 is a minimal, in-memory learning project with no database).
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
@@ -43,6 +43,19 @@ def _validate_title(value: str) -> str:
     return stripped
 
 
+def _validate_comment_text(value: str) -> str:
+    """
+    Shared comment text rule: strip whitespace, reject blank values, and
+    enforce a reasonable max length to prevent unbounded payloads.
+    """
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("comment text must not be blank")
+    if len(stripped) > 1000:
+        raise ValueError("comment text must be at most 1000 characters")
+    return stripped
+
+
 class TaskCreate(BaseModel):
     """Payload for creating a new task."""
 
@@ -53,6 +66,7 @@ class TaskCreate(BaseModel):
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -70,6 +84,7 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title", "description", "status", "priority")
     @classmethod
@@ -104,5 +119,30 @@ class TaskResponse(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     assignee: Optional[str]
+    due_date: Optional[date]
     created_at: datetime
     updated_at: datetime
+
+
+class TaskCommentCreate(BaseModel):
+    """Payload for creating a task comment."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+
+    @field_validator("text")
+    @classmethod
+    def _check_text(cls, value: str) -> str:
+        return _validate_comment_text(value)
+
+
+class TaskCommentResponse(BaseModel):
+    """Task comment representation returned by the API."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    task_id: str
+    text: str
+    created_at: datetime

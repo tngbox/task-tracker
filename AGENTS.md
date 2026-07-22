@@ -3,7 +3,7 @@
 ## Project summary
 Task Tracker is a learning project with a FastAPI REST API and a static vanilla-JavaScript Kanban frontend.
 
-The API provides `/health` and CRUD endpoints under `/tasks`. Tasks are held in an in-memory dictionary, so data is lost when the server restarts. The project intentionally has no database or authentication.
+The API provides `/health`, CRUD endpoints under `/tasks`, and task comment endpoints under `/tasks/{task_id}/comments`. Tasks and comments are held in in-memory dictionaries, so data is lost when the server restarts. The project intentionally has no database or authentication.
 
 ## Tech stack
 - Python 3.11
@@ -27,9 +27,9 @@ python tests/verify_a.py
 The static frontend calls the API at `http://127.0.0.1:8000`; open `frontend/index.html` directly in a browser while the API is running.
 
 ## Architecture
-- `app/main.py`: FastAPI application, CORS configuration, health endpoint, and task routes.
-- `app/models.py`: Pydantic request/response models, enums, and field validation.
-- `app/storage.py`: in-memory task storage, UUID generation, and timestamps.
+- `app/main.py`: FastAPI application, CORS configuration, health endpoint, task routes, and comments routes.
+- `app/models.py`: Pydantic task/comment request/response models, enums, and field validation.
+- `app/storage.py`: in-memory task/comment storage, overdue filtering, UUID generation, and timestamps.
 - `app/business_rules.py`: allowed task-status transitions.
 - `tests/`: pytest API tests and shared fixtures.
 - `frontend/index.html`: static Kanban UI.
@@ -39,8 +39,13 @@ The static frontend calls the API at `http://127.0.0.1:8000`; open `frontend/ind
 - Priority values: `Low`, `Medium`, `High`.
 - Default task status is `ToDo`; default priority is `Medium`.
 - A task title is required, trimmed, non-empty, and at most 200 characters after trimming.
+- A task `due_date` is optional (`YYYY-MM-DD`) and can be cleared with `null`.
+- Overdue is defined as `due_date < today UTC` and `status != Done`.
+- `GET /tasks` accepts optional `overdue=true|false`.
 - Create and update payloads reject unknown fields.
-- `PATCH` accepts partial updates. Explicit `null` is rejected for `title`, `description`, `status`, and `priority`; `assignee` may be `null`.
+- `PATCH` accepts partial updates. Explicit `null` is rejected for `title`, `description`, `status`, and `priority`; `assignee` and `due_date` may be `null`.
+- Comment `text` is required, trimmed, non-blank, and at most 1000 characters.
+- Missing task/comment resources return HTTP 404 on comments endpoints.
 - Allowed status transitions are:
   - `ToDo` -> `InProgress`
   - `InProgress` -> `Done`
