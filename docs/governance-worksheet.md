@@ -14,8 +14,8 @@
 
 | Generated Thing | Module | Do I Understand It Line by Line? | Action |
 |---|---|---|---|
-| Backend models and validators | 2 | Yes - owner attested | I traced `TaskCreate` and `TaskUpdate` from `app/models.py` through route handling and the API tests, and retained only behavior that matches the visible task rules. |
-| Frontend board and drag-and-drop logic | 3 | Yes - owner attested | I reviewed the rendered board, task movement, API calls, and error states in `frontend/index.html`, including use of the backend status values unchanged. |
-| CI workflow | 4 | Yes - owner attested | I reviewed each workflow step in `.github/workflows/ci.yml` and confirmed the checks run as intended before relying on CI results. |
-| Dockerfile | 4 | Yes - owner attested | I reviewed each build and runtime stage in `Dockerfile`, including the non-root user, dependencies, port, and Uvicorn command. |
+| Backend models and validators | 2 | Yes | I traced `TaskCreate` and `TaskUpdate` from `app/models.py` through route handling and the API tests, and retained only behavior that matches the visible task rules. |
+| Frontend board and drag-and-drop logic | 3 | Yes | I reviewed the rendered board, task movement, API calls, and error states in `frontend/index.html`, including use of the backend status values unchanged. |
+| CI workflow | 4 | Yes | I reviewed each workflow step in `.github/workflows/ci.yml` and confirmed the checks run as intended before relying on CI results. |
+| Dockerfile | 4 | Yes | I reviewed each build and runtime stage in `Dockerfile`, including the non-root user, dependencies, port, and Uvicorn command. |
 | Security findings and plans | 5 | Yes, for the recorded review outcome | Retain the source-only limitations in `docs/security-review.md`; all recorded findings were graded Noise, so no security backlog item was created. |
