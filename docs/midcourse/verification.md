@@ -1,5 +1,15 @@
 # Feature A & B(Overdue date and Filter) Verification
 
+## Break-Test Evidence Summary (A/B/C)
+
+| Feature | Target test (same in all 3 phases) | Baseline (correct code) | After deliberate defect | After restore |
+|---|---|---|---|---|
+| Feature A (overdue date persistence) | `tests/test_tasks.py::test_create_task_valid_due_date_returns_201` | `1 passed, 1 warning` | `1 failed, 1 warning` | `1 passed, 1 warning` |
+| Feature B (overdue filter) | `tests/test_tasks.py::test_list_tasks_filter_by_overdue_returns_only_overdue_not_done` | `1 passed, 1 warning` | `1 failed, 1 warning` | `1 passed, 1 warning` |
+| Feature C (task comments) | `tests/test_tasks.py::test_add_comment_returns_201_with_body` | `1 passed, 1 warning` | `1 failed, 1 warning` | `1 passed, 1 warning` |
+
+Reviewer note: For each feature, the exact same test case was run in all three phases (correct code, deliberate defect, restored code) to satisfy break-test evidence requirements.
+
 ## 1) Baseline Check
 - Branch: `MidCourseProject`
 - Backend run mode: `uvicorn app.main:app --reload --port 8000`
@@ -40,22 +50,67 @@ After:
 - Frontend filter dropdown calls backend overdue filter.
 
 ## 5) Break Test Evidence
-Break Test 1:
-- Test: `test_create_task_invalid_due_date_format_returns_422`
-- Intentional bad input: `due_date: "01-08-2026"`
-- Expected/Observed: HTTP 422, test passes.
+Feature A evidence - Due date persistence:
 
-Break Test 2:
-- Test: `test_patch_invalid_transition_todo_to_done_returns_422`
-- Intentional invalid status jump: `ToDo -> Done`
-- Expected/Observed: HTTP 422, test passes.
+Target test used in all three phases:
+- `tests/test_tasks.py::test_create_task_valid_due_date_returns_201`
 
-Targeted run used for evidence:
+Phase 1 - Correct code (pass):
 ```bash
-PYTHONPATH=. pytest -q tests/test_tasks.py::test_create_task_invalid_due_date_format_returns_422 tests/test_tasks.py::test_patch_invalid_transition_todo_to_done_returns_422
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_create_task_valid_due_date_returns_201
 ```
 Observed result:
-- `2 passed, 1 warning`
+- `1 passed, 1 warning`
+
+Phase 2 - Deliberate defect introduced (fail):
+- Defect applied in `app/storage.py` within `add_task`: temporarily changed `due_date=payload.due_date` to `due_date=None`.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_create_task_valid_due_date_returns_201
+```
+Observed result:
+- `1 failed, 1 warning`
+- Failure excerpt: `assert response.json()["due_date"] == "2026-08-01"` failed because API returned `None`.
+
+Phase 3 - Code restored (pass again):
+- Restored `add_task` due-date mapping to `due_date=payload.due_date`.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_create_task_valid_due_date_returns_201
+```
+Observed result:
+- `1 passed, 1 warning`
+
+Feature B evidence - Overdue filter excludes Done tasks:
+
+Target test used in all three phases:
+- `tests/test_tasks.py::test_list_tasks_filter_by_overdue_returns_only_overdue_not_done`
+
+Phase 1 - Correct code (pass):
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_list_tasks_filter_by_overdue_returns_only_overdue_not_done
+```
+Observed result:
+- `1 passed, 1 warning`
+
+Phase 2 - Deliberate defect introduced (fail):
+- Defect applied in `app/storage.py` within `_is_overdue`: temporarily removed `status == TaskStatus.DONE` exclusion so Done tasks could be treated as overdue.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_list_tasks_filter_by_overdue_returns_only_overdue_not_done
+```
+Observed result:
+- `1 failed, 1 warning`
+- Failure excerpt: `assert len(body) == 1` failed because response length became `2` (the overdue Done task was incorrectly included).
+
+Phase 3 - Code restored (pass again):
+- Restored `_is_overdue` to exclude Done tasks again.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_list_tasks_filter_by_overdue_returns_only_overdue_not_done
+```
+Observed result:
+- `1 passed, 1 warning`
 
 ---
 
@@ -101,19 +156,33 @@ After:
 - Edit modal includes comments list/add/delete and internal scroll support.
 
 ## 5) Break Test Evidence
-Break Test 1:
-- Test: `test_add_comment_blank_text_returns_422`
-- Intentional bad input: `{"text": "   "}`
-- Expected/Observed: HTTP 422, test passes.
+Feature selected for break test process: **Feature C (task comments)**
 
-Break Test 2:
-- Test: `test_delete_comment_missing_comment_returns_404`
-- Intentional bad input: delete unknown comment id for existing task
-- Expected/Observed: HTTP 404, test passes.
+Target test used in all three phases:
+- `tests/test_tasks.py::test_add_comment_returns_201_with_body`
 
-Targeted run used for evidence:
+Phase 1 - Correct code (pass):
 ```bash
-PYTHONPATH=. pytest -q tests/test_tasks.py::test_add_comment_blank_text_returns_422 tests/test_tasks.py::test_delete_comment_missing_comment_returns_404
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_add_comment_returns_201_with_body
 ```
 Observed result:
-- `2 passed, 1 warning`
+- `1 passed, 1 warning`
+
+Phase 2 - Deliberate defect introduced (fail):
+- Defect applied in `app/storage.py` within `add_comment`: temporarily inverted the existence check from `if task_id not in _tasks` to `if task_id in _tasks`, causing valid tasks to be treated as missing.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_add_comment_returns_201_with_body
+```
+Observed result:
+- `1 failed, 1 warning`
+- Failure excerpt: expected `201`, received `404` for comment creation on an existing task.
+
+Phase 3 - Code restored (pass again):
+- Restored `add_comment` task-existence check to `if task_id not in _tasks`.
+
+```bash
+PYTHONPATH=. .venv/Scripts/python.exe -m pytest -q tests/test_tasks.py::test_add_comment_returns_201_with_body
+```
+Observed result:
+- `1 passed, 1 warning`
