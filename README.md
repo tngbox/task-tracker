@@ -1,11 +1,9 @@
-# Task Tracker
+# Task Tracker Final Project
 
 A minimal FastAPI + Pydantic v2 REST backend for tracking tasks, built as a
 learning project. It intentionally keeps the smallest possible
 footprint: an in-memory store, no database, and no authentication. All task
 state lives in memory and is lost when the server restarts.
-
-## 0. Final Project
 
 Branch reviewed: final-project
 
