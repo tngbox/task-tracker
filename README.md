@@ -7,6 +7,7 @@ state lives in memory and is lost when the server restarts.
 
 ## Table of Contents
 
+- [0. Final Project](#0-final-project)
 - [1. Project overview](#1-project-overview)
 - [2. Prerequisites](#2-prerequisites)
 - [3. Local setup](#3-local-setup)
@@ -20,7 +21,53 @@ state lives in memory and is lost when the server restarts.
 - [9. Project conventions and current limitations](#9-project-conventions-and-current-limitations)
 - [9.1 Midcourse docs](#91-midcourse-docs)
 - [10. Design decisions](#10-design-decisions)
-- [11. Final Project](#11-final-project)
+
+
+## 0. Final Project
+
+Branch reviewed: final-project
+
+### What this submission demonstrates
+
+- Existing Task Tracker app still runs inside the intended course scope.
+- CI runs the pytest suite on push and pull request.
+- Docker image builds and runs with `/health` returning 200.
+- AI review, security, and ownership evidence is in `docs/`.
+
+### How to run locally
+
+```bash
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --port 8000
+```
+
+### How to run tests
+
+```bash
+python -m pytest -v
+```
+
+### How to run with Docker
+
+```bash
+docker build -t task-tracker:final-check .
+docker run --rm -p 8001:8000 task-tracker:final-check
+curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8001/health
+```
+
+### Evidence files
+
+- `docs/release-evidence.md`
+- `docs/final-ai-review.md`
+- `docs/ai-playbook.md`
+
+### AI assistance summary
+
+AI helped draft or review: CI, Docker, docs, security, and debugging checks.
+I verified the work by: tests, diff review, Docker build/run, `/health` checks, and manual scan of workflow safety shortcuts.
+One AI suggestion I rejected or corrected: add a latest green GitHub Actions run URL without verifiable local evidence; I replaced it with a factual "not confirmed from local workspace" note.
 
 ## 1. Project overview
 
@@ -68,7 +115,7 @@ cp .env.example .env
 
 > Note: `.env` (`PORT`, `APP_ENV`) is loaded via `load_dotenv()` but is not
 > currently read by the application code, so it does not change the server
-> port or behavior yet. [VERIFY]
+> port or behavior yet.
 
 ## 4. Run the app locally
 
@@ -96,7 +143,7 @@ a browser (it calls the API at `127.0.0.1:8000`):
 # macOS: open frontend/index.html   |   Windows: start frontend/index.html
 ```
 
-## 4.1 Feature usage (due dates, overdue filter, comments)
+## 4.1 Feature usage added during the Mid-Course-Project(due dates, overdue filter, comments)
 
 Create a task with a due date:
 
@@ -258,7 +305,7 @@ task-tracker/
 
 > `create_test_tasks.py` imports `requests`, which is **not** in
 > `requirements.txt`; install it separately (`pip install requests`) if you run
-> that script. [VERIFY]
+> that script.
 
 ## 9. Project conventions and current limitations
 
@@ -282,7 +329,7 @@ Current limitations (by design for this module):
 - **CORS is wide open** (`allow_origins=["*"]`) for local frontend development.
 - **Not production-ready and not deployed** — this is a learning project.
 
-## 9.1 Midcourse docs
+## 9.1 Midcourse docs created during mid-course-project implementation
 
 Midcourse feature artifacts are available in `docs/midcourse`:
 
@@ -299,51 +346,4 @@ no-database / no-auth / minimal design. That decision is documented in
 [docs/decisions/adr-001.md](docs/decisions/adr-001.md), which covers the
 in-memory task storage choice, the alternatives considered, and the trade-offs.
 
-> Note: `docs/decisions/adr-001.md` is currently a **draft** — some sections are
-> marked for rewrite and contain `[VERIFY]` items to confirm.
 
-## 11. Final Project
-
-Branch reviewed: final-project
-
-### What this submission demonstrates
-
-- Existing Task Tracker app still runs inside the intended course scope.
-- CI runs the pytest suite on push and pull request.
-- Docker image builds and runs with `/health` returning 200.
-- AI review, security, and ownership evidence is in `docs/`.
-
-### How to run locally
-
-```bash
-python -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m uvicorn app.main:app --port 8000
-```
-
-### How to run tests
-
-```bash
-python -m pytest -v
-```
-
-### How to run with Docker
-
-```bash
-docker build -t task-tracker:final-check .
-docker run --rm -p 8001:8000 task-tracker:final-check
-curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8001/health
-```
-
-### Evidence files
-
-- `docs/release-evidence.md`
-- `docs/final-ai-review.md`
-- `docs/ai-playbook.md`
-
-### AI assistance summary
-
-AI helped draft or review: CI, Docker, docs, security, and debugging checks.
-I verified the work by: tests, diff review, Docker build/run, `/health` checks, and manual scan of workflow safety shortcuts.
-One AI suggestion I rejected or corrected: add a latest green GitHub Actions run URL without verifiable local evidence; I replaced it with a factual "not confirmed from local workspace" note.
