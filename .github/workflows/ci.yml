@@ -34,3 +34,84 @@ jobs:
         run: pytest -v --tb=short
         env:
           PYTHONPATH: ${{ github.workspace }}
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t task-tracker:ci .
+
+      - name: Start container
+        run: docker run -d --name task-tracker-ci -p 8000:8000 task-tracker:ci
+
+      - name: Wait for health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Container health check failed"
+          docker logs task-tracker-ci
+          exit 1
+
+      - name: Smoke test Feature A/B/C in container
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import date, timedelta
+          from urllib import request
+
+          def call(method, path, payload=None):
+            data = None
+            headers = {}
+            if payload is not None:
+              data = json.dumps(payload).encode("utf-8")
+              headers["Content-Type"] = "application/json"
+            req = request.Request(
+              f"http://127.0.0.1:8000{path}",
+              data=data,
+              headers=headers,
+              method=method,
+            )
+            with request.urlopen(req, timeout=10) as resp:
+              body = resp.read().decode("utf-8")
+              return resp.status, json.loads(body) if body else None
+
+          yesterday = (date.today() - timedelta(days=1)).isoformat()
+
+          status, created = call("POST", "/tasks", {
+            "title": "container feature test",
+            "due_date": yesterday,
+          })
+          assert status == 201, f"expected 201, got {status}"
+          assert created["due_date"] == yesterday, "Feature A failed: due_date not persisted"
+          task_id = created["id"]
+
+          status, overdue_tasks = call("GET", "/tasks?overdue=true")
+          assert status == 200, f"expected 200, got {status}"
+          assert any(t["id"] == task_id for t in overdue_tasks), "Feature B failed: overdue filter missing task"
+
+          status, comment = call("POST", f"/tasks/{task_id}/comments", {
+            "text": "container comment",
+          })
+          assert status == 201, f"expected 201, got {status}"
+          assert comment["task_id"] == task_id, "Feature C failed: comment task_id mismatch"
+
+          status, comments = call("GET", f"/tasks/{task_id}/comments")
+          assert status == 200, f"expected 200, got {status}"
+          assert any(c["id"] == comment["id"] for c in comments), "Feature C failed: comment not listed"
+          PY
+
+      - name: Print container logs on failure
+        if: failure()
+        run: docker logs task-tracker-ci
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f task-tracker-ci

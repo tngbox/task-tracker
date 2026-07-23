@@ -183,19 +183,39 @@ curl http://localhost:8000/health
 
 The image is a multi-stage build on `python:3.11-slim`, runs as a non-root
 `app` user, and contains only the `app/` package plus its dependencies. The
-static frontend and tests are not included in the image.
+runtime stage also includes a container `HEALTHCHECK` against `/health`.
+The static frontend and tests are not included in the image.
 
 ## 7. CI workflow summary
 
 GitHub Actions runs `.github/workflows/ci.yml`:
 
 - **Triggers:** every `push` (any branch) and every `pull_request` targeting `main`.
-- **Job:** a single `test` job on `ubuntu-latest`.
-- **Steps:** checkout → set up Python 3.11 → cache pip (keyed on
-  `requirements.txt`) → upgrade pip → `pip install -r requirements.txt` →
-  `pytest -v --tb=short` (with `PYTHONPATH` set to the workspace root).
+- **Jobs:**
+  - `test`: checkout → set up Python 3.11 → cache pip (keyed on
+    `requirements.txt`) → upgrade pip → `pip install -r requirements.txt` →
+    `pytest -v --tb=short` (with `PYTHONPATH` set to the workspace root).
+  - `docker-smoke` (after `test`): builds the Docker image, starts the
+    container, waits for `/health`, then runs an API smoke test inside CI that
+    verifies Feature A (due date), Feature B (overdue filter), and Feature C
+    (task comments) against the containerized backend.
 
-A failing test fails the job; there is no deployment step.
+Any failing test or smoke check fails CI; there is no deployment step.
+
+### 7.1 CI quick view
+
+Optional README badge (replace placeholders):
+
+```md
+[![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+```
+
+Validation matrix:
+
+| Job | Layer checked | Primary checks | Feature A | Feature B | Feature C |
+| --- | --- | --- | --- | --- | --- |
+| `test` | Source/runtime in pytest process | Full API test suite (`tests/test_tasks.py`) | Covered | Covered | Covered |
+| `docker-smoke` | Packaged container runtime | Build image, start container, `/health`, API smoke flow | Covered | Covered | Covered |
 
 ## 8. Project structure
 
@@ -264,3 +284,49 @@ in-memory task storage choice, the alternatives considered, and the trade-offs.
 
 > Note: `docs/decisions/adr-001.md` is currently a **draft** — some sections are
 > marked for rewrite and contain `[VERIFY]` items to confirm.
+
+## 11. Final Project
+
+Branch reviewed: final-project
+
+### What this submission demonstrates
+
+- Existing Task Tracker app still runs inside the intended course scope.
+- CI runs the pytest suite on push and pull request.
+- Docker image builds and runs with `/health` returning 200.
+- AI review, security, and ownership evidence is in `docs/`.
+
+### How to run locally
+
+```bash
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --port 8000
+```
+
+### How to run tests
+
+```bash
+python -m pytest -v
+```
+
+### How to run with Docker
+
+```bash
+docker build -t task-tracker:final-check .
+docker run --rm -p 8001:8000 task-tracker:final-check
+curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8001/health
+```
+
+### Evidence files
+
+- `docs/release-evidence.md`
+- `docs/final-ai-review.md`
+- `docs/ai-playbook.md`
+
+### AI assistance summary
+
+AI helped draft or review: CI, Docker, docs, security, and debugging checks.
+I verified the work by: tests, diff review, Docker build/run, `/health` checks, and manual scan of workflow safety shortcuts.
+One AI suggestion I rejected or corrected: add a latest green GitHub Actions run URL without verifiable local evidence; I replaced it with a factual "not confirmed from local workspace" note.

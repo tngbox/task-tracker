@@ -2,39 +2,43 @@
 
 ## 1. When I reach for AI first
 
-- **Cursor**: interactive implementation while I am actively driving in the IDE - small-to-medium features, focused refactors, and quick codebase questions.
-- **Codex**: bounded repository tasks that need investigation, multi-file edits, commands, and verification; I review the resulting diff before accepting it.
-- **GitHub Copilot**: GitHub-centered pull-request review and a second pass over a changed diff, after I have run the relevant local checks.
+- I reach for AI first when the task is bounded and verifiable: summarize a file I just changed, draft a test matrix, or produce a checklist for release evidence.
+- During this course, AI helped most when I needed fast repository navigation and command sequencing: run baseline checks, verify `/health`, confirm CI steps, and write short evidence docs.
+- I use AI as an accelerator, not an approver. I still decide what gets merged.
 
 ## 2. When I do not reach for AI
 
-- When the task involves credentials, private customer data, production access, or material I am not authorized to share.
-- When I cannot state the intended behavior and an observable way to verify it.
-- When an irreversible production action needs a human decision, explicit approval, or a change record first.
+- I do not start with AI when secrets, private data, or production-only context is involved.
+- I do not start with AI when I cannot define success criteria or a concrete verification command.
+- I do not start with AI when the goal is my own learning of a core concept that I should practice directly first.
 
 ## 3. My non-negotiables
 
-- I keep secrets, tokens, `.env` values, customer data, and private keys out of AI prompts and tool output.
-- I keep the task bounded, preserve existing user changes, and inspect the diff before I accept any edit.
-- I run the relevant tests or checks myself; an AI claim that code works is not evidence.
+- Never paste secrets, tokens, `.env` values, customer data, or keys into prompts.
+- Keep scope tight: no feature creep when the task is review, grading, or release readiness.
+- Inspect every diff before accepting it, especially docs that claim commands or results.
+- Run commands myself (`pytest`, health checks, Docker checks) before I trust any AI summary.
+- Ownership is mine; if I cannot explain a line, I do not submit it.
 
 ## 4. My review rules
 
-- I give the reviewer the goal, constraints, risk areas, and tests that should matter - not just "review this."
-- I validate every finding against the code and requirements; I do not treat AI feedback as an approval or a blocker.
-- I ask for a separate security, regression, and maintainability pass on changes with meaningful blast radius.
+- I review in this order: scope, behavior, safety, then style.
+- I grade AI comments explicitly: Useful, Noise, or Wrong, and I record why.
+- I reject any suggestion that is unverifiable from files, commands, or tests.
+- I prefer exact evidence over broad claims: command used, output observed, file updated.
+- For risky areas, I ask for separate passes (security, regression, maintainability) instead of one blended review.
 
 ## 5. What I am still figuring out
 
-- Which tasks are reliably faster with a tool than with a short manual implementation.
-- Which repository instructions, prompts, and checklists improve the quality of reviews over time.
-- Where tool permissions and autonomy should stop for infrastructure and production-adjacent work.
+- Where the handoff line should be between AI-generated docs and my own manual notes.
+- How strict to be about requiring two independent checks for higher-risk suggestions.
+- What team norm works best for storing prompt logs without creating noise.
 
 ## Decision Card
 
-- For a new feature I reach for: Cursor for interactive implementation; Codex for a bounded, verified repository task.
-- For a code review I reach for: GitHub Copilot on the pull request, followed by human review.
-- For debugging I reach for: Codex when investigation, reproduction, and test execution span the repository; Cursor for an IDE-local investigation.
-- For infrastructure I reach for: Codex only for a scoped, reviewable plan or change; I retain human approval for execution.
-- I will never paste secrets, credentials, private keys, or private customer data into an AI tool.
-- My one rule is: I remain accountable for every change I accept.
+- New feature: use AI for scaffolding and edge-case brainstorming; implement and verify behavior myself.
+- Code review: let AI produce candidate findings, then I grade each finding before acting.
+- Debugging: use AI to narrow hypotheses, then reproduce and confirm with tests or runtime checks.
+- Infrastructure: use AI for draft plans and checklists; execute only with explicit human approval.
+- Never paste: secrets, credentials, private keys, `.env` values, or real customer data.
+- One rule: if I cannot explain it, I do not keep it.

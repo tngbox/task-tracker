@@ -59,8 +59,10 @@ The static frontend calls the API at `http://127.0.0.1:8000`; open `frontend/ind
 - Use one bounded task per thread.
 - Edit `docs/` only by default.
 - Do not modify `app/` unless the user explicitly approves one specific minimal fix.
+- Do not modify `frontend/` unless the user explicitly approves one specific minimal fix.
 - Before claiming anything about the repository, inspect the relevant files and cite them.
 - If a file, command, behavior, or rule is not visible, label it **not confirmed** rather than guessing.
+- If unexpected unrequested changes appear in `app/` or `frontend/` while working, stop and ask the user how to proceed before continuing.
 
 ## Security and governance
 - Do not paste, log, commit, or expose secrets, tokens, credentials, or `.env` contents.
