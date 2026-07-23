@@ -5,6 +5,23 @@ learning project. It intentionally keeps the smallest possible
 footprint: an in-memory store, no database, and no authentication. All task
 state lives in memory and is lost when the server restarts.
 
+## Table of Contents
+
+- [1. Project overview](#1-project-overview)
+- [2. Prerequisites](#2-prerequisites)
+- [3. Local setup](#3-local-setup)
+- [4. Run the app locally](#4-run-the-app-locally)
+- [4.1 Feature usage (due dates, overdue filter, comments)](#41-feature-usage-due-dates-overdue-filter-comments)
+- [5. Run tests](#5-run-tests)
+- [6. Run with Docker](#6-run-with-docker)
+- [7. CI workflow summary](#7-ci-workflow-summary)
+- [7.1 CI quick view](#71-ci-quick-view)
+- [8. Project structure](#8-project-structure)
+- [9. Project conventions and current limitations](#9-project-conventions-and-current-limitations)
+- [9.1 Midcourse docs](#91-midcourse-docs)
+- [10. Design decisions](#10-design-decisions)
+- [11. Final Project](#11-final-project)
+
 ## 1. Project overview
 
 The API exposes CRUD endpoints for tasks, task comments, and a health check:
