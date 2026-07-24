@@ -11,7 +11,7 @@
 
 ## CI evidence
 - Workflow file: `.github/workflows/ci.yml`
-- Latest run link or note: run link not confirmed from local workspace; file check plus local baseline tests completed successfully.
+- Latest run link or note: https://github.com/tngbox/task-tracker/actions/runs/30029089197 (workflow `CI`, branch `final-project`, conclusion `success`, commit `e6456550905d7e476fa81e0577ddf43ac9ba63c3`).
 - Test command used by CI: `pytest -v --tb=short`
 - Shortcut check: no `continue-on-error` / no `|| true` / pytest is not skipped.
 
@@ -26,5 +26,6 @@
 | Claim checked | Evidence used | Result | Change made, if any |
 |---|---|---|---|
 | README test command can validate baseline quality. | Ran `python -m pytest -v`; verified 36/36 passed. | Confirmed | Kept exact test command in README Final Project section. |
-| Container health endpoint returns HTTP 200 after run. | Built image, ran container on host port 8001, checked `curl -w "%{http_code}" /health`. | Confirmed | README Docker section uses exact command sequence with HTTP status check. |
+| README verify command for `verify_a` works from repository root. | Ran `.venv\Scripts\python.exe -m tests.verify_a`; all checks printed PASS. | Confirmed | Replaced `python tests/verify_a.py` with `python -m tests.verify_a` in README. |
+| Docker verification endpoint must match mapped host port (`8001:8000`). | Checked README Docker section command mapping and expected endpoint. | Corrected | Updated README Docker health check URL from `localhost:8000` to `localhost:8001`. |
 | CI runs pytest with dependency install and explicit Python version. | Inspected `.github/workflows/ci.yml` (`python-version: "3.11"`, `pip install -r requirements.txt`, `pytest -v --tb=short`). | Confirmed | Recorded CI evidence and shortcut check in this file. |

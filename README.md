@@ -48,7 +48,7 @@ pytest -k transition
 PASS/FAIL for model validation rules:
 
 ```bash
-python tests/verify_a.py
+python -m tests.verify_a
 ```
 ### 4. How to run with Docker
 
@@ -59,7 +59,7 @@ docker run --rm -p 8001:8000 task-tracker:final-check
 Then, from another terminal:
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 The image is a multi-stage build on `python:3.11-slim`, runs as a non-root
