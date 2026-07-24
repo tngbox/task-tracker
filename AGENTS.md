@@ -21,7 +21,7 @@ python -m venv venv
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 pytest -v
-python tests/verify_a.py
+python -m tests.verify_a
 ```
 
 The static frontend calls the API at `http://127.0.0.1:8000`; open `frontend/index.html` directly in a browser while the API is running.
