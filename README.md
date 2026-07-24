@@ -77,7 +77,7 @@ The static frontend and tests are not included in the image.
 
 AI helped draft or review: CI, Docker, docs, security, and debugging checks.
 I verified the work by: tests, diff review, Docker build/run, `/health` checks, and manual scan of workflow safety shortcuts.
-One AI suggestion I rejected or corrected: add a latest green GitHub Actions run URL without verifiable local evidence; I replaced it with a factual "not confirmed from local workspace" note.
+One AI suggestion I rejected or corrected: keep Docker verification on `localhost:8000` while mapping `8001:8000`; I corrected the health check URL to `localhost:8001`.
 
 ## 7. CRUD endpoints
 The API exposes CRUD endpoints for tasks, task comments, and a health check:

@@ -11,7 +11,7 @@
 
 ## CI evidence
 - Workflow file: `.github/workflows/ci.yml`
-- Latest run link or note: https://github.com/tngbox/task-tracker/actions/runs/30029089197 (workflow `CI`, branch `final-project`, conclusion `success`, commit `e6456550905d7e476fa81e0577ddf43ac9ba63c3`).
+- Latest run link or note: https://github.com/tngbox/task-tracker/actions/runs/30093419279 (workflow `CI`, branch `final-project`, conclusion `success`, commit `e944d7aebe25e8625117a298e8ad32f499974f1d`).
 - Test command used by CI: `pytest -v --tb=short`
 - Shortcut check: no `continue-on-error` / no `|| true` / pytest is not skipped.
 
